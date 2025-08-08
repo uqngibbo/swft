@@ -53,7 +53,7 @@ int main(string[] args)
     double L = 1.0;
     double rs = 0.05;
     double rf = 0.10;
-    double dt = 1e-6;
+    double dt = 5e-7;
     double As = PI*rs*rs;
 
     size_t nreserve = to!size_t(L/(v*dt))*2;
@@ -88,11 +88,12 @@ int main(string[] args)
         double A1 = PI*r1*r1;
 
         double dA = A1-A;
-        // THis is according to past nick who did these at 11pm and should be checked!
+        // Analytic differentiation of the EoS. Checked that this matches PJ's FD
         double R = gm.gas_constant(gs).re;
         double cv = gm.dudT_const_v(gs).re;
         double dfdr = R*gs.T.re;
         double dfdu = gs.rho.re*R/cv;
+
 
         // Compute the accommodation increments using expressions from Maxima.
         double denom = A*(rho*rho*v*v - dfdr*rho*rho - dfdu*p);
@@ -124,7 +125,7 @@ int main(string[] args)
         xs ~= x;
 
         iter += 1;
-		if (iter%1==0){ // Progress bar maybe
+		if (iter%50==0){ // Progress bar maybe
 			write(".");
             stdout.flush();
 		}

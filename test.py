@@ -67,9 +67,10 @@ gamma = data['gamma'][0]
 M0 = data['M'][0]
 
 ref = {}
-ref['M'] = data['M'][::10]
-ref['x'] = data['x'][::10]
-Mref = data['M'][::10]
+every = 25
+ref['M'] = data['M'][::every]
+ref['x'] = data['x'][::every]
+Mref = ref['M']
 ref['A'] = data['A'][0]*A_on_A0(M0, Mref, gamma)
 ref['T'] = data['T'][0]*T_on_T0(M0, Mref, gamma)
 ref['p'] = data['p'][0]*p_on_p0(M0, Mref, gamma)
