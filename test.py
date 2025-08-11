@@ -67,7 +67,7 @@ gamma = data['gamma'][0]
 M0 = data['M'][0]
 
 ref = {}
-every = 25
+every = 10
 ref['M'] = data['M'][::every]
 ref['x'] = data['x'][::every]
 Mref = ref['M']

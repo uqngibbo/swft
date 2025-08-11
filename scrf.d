@@ -64,6 +64,8 @@ int main(string[] args)
     double rho = gs.rho.re;
     double p = gs.p.re;
     double T = gs.T.re;
+    double u = gs.u.re;
+    double E = u + 0.5*v*v;
     double du_chem = 0.0;
     double dp_chem = 0.0;
     double gamma = gm.gamma(gs).re;
@@ -94,16 +96,14 @@ int main(string[] args)
         double dfdr = R*gs.T.re;
         double dfdu = gs.rho.re*R/cv;
 
-
         // Compute the accommodation increments using expressions from Maxima.
-        double denom = A*(rho*rho*v*v - dfdr*rho*rho - dfdu*p);
-        double drho = (A*(dp_chem - du_chem*dfdu)*rho*rho - dA*rho^^3*v*v) / denom;
-        double dv = (A*(du_chem*dfdu - dp_chem)*rho +
-                     dA*(dfdr*rho*rho + dfdu*p))*v / denom;
-        double dp_gda = -((dA*dfdr*rho^^3 + A*dfdu*du_chem*rho*rho + dA*dfdu*p*rho)*v*v
-                          - A*dfdr*dp_chem*rho*rho - A*dfdu*dp_chem*p) / denom;
-        double du_gda = -(A*(du_chem*rho*rho*v*v - du_chem*dfdr*rho*rho - dp_chem*p)
-                          + dA*p*rho*v*v) / denom;
+
+        // We get slightly different dp_chems to nenzf1d. I wonder why?
+        double denom = A*rho^^2*v^^2 - A*dfdr*rho^^2 - A*dfdu*p;
+        double drho =  -(dA*rho^^3*v^^2)/denom;
+        double dv = ((dA*dfdr*rho^^2 + dA*dfdu*p)*v)/denom;
+        double dp_gda = -((dA*dfdr*rho^^3 + A*dp_chem*rho^^2 + dA*dfdu*p*rho)*v^^2 - A*dfdr*dp_chem*rho^^2 - A*dfdu*dp_chem*p)/denom; // NNG with p_chem
+        double du_gda = -(dA*p*rho*v^^2)/denom;
 
         // Add the increments
         x = x + dx;
@@ -117,6 +117,8 @@ int main(string[] args)
 		rho = gs.rho.re;
 		p = gs.p.re;
         T = gs.T.re;
+        u = gs.u.re;
+        E = u + 0.5*v*v;
         gamma = gm.gamma(gs).re;
 		du_chem = 0.0;
 		dp_chem = 0.0;

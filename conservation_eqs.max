@@ -1,0 +1,89 @@
+/* ---------------------------------------------------------
+Maxima File to compute linearised conservation eqns for scrf
+
+@author: Nick Gibbons
+-----------------------------------------------------------*/
+
+mass:(rho+dr)*(v+dv)*(A+dA) - rho*v*A$
+
+mass_exp:expand(mass)$
+
+mass_exp:subst(0, dA*dr*dv, mass_exp)$
+mass_exp:subst(0, A*dr*dv, mass_exp)$
+mass_exp:subst(0, dA*dv*rho, mass_exp)$
+mass_exp:subst(0, dA*dr*v, mass_exp);
+
+/*
+mom:(rho+dr)*(v+dv)*(v+dv)*(A+dA) + (p+dp)*(A+dA) - rho*v*v*A - p*A$
+*/
+mom:(rho+dr)*(v+dv)*(v+dv)*(A+dA) + (p+dp)*(A+dA) - rho*v*v*A - p*A -(p+dp/2)*dA$
+mom_exp:expand(mom)$
+mom_exp:subst(0, dA*dr*v*v, mom_exp)$
+mom_exp:subst(0, 2*dA*dv*rho*v, mom_exp)$
+mom_exp:subst(0, 2*dA*dr*dv*v, mom_exp)$
+mom_exp:subst(0, 2*A*dr*dv*v, mom_exp)$
+mom_exp:subst(0, dA*dv*dv*rho, mom_exp)$
+mom_exp:subst(0, A*dv*dv*rho, mom_exp)$
+mom_exp:subst(0, dA*dr*dv*dv , mom_exp)$
+mom_exp:subst(0, A*dr*dv*dv , mom_exp)$
+mom_exp:subst(0, 3*dA*dp , mom_exp)$
+mom_exp:subst(0, dA*dp , mom_exp);
+
+/* display2d:false$ */
+nrg:(rho+dr)*(v+dv)*(A+dA)*(E+dE) + (p+dp)*(A+dA)*(v+dv) - rho*v*A*E - p*A*v;
+nrg_exp:expand(nrg);
+
+nrg_exp:subst(0, dA*dE*rho*v, nrg_exp)$
+nrg_exp:subst(0, dA*dE*dr*v, nrg_exp)$
+nrg_exp:subst(0, A*dE*dr*v, nrg_exp)$
+nrg_exp:subst(0, E*dA*dr*v, nrg_exp)$
+nrg_exp:subst(0, dA*dp*v, nrg_exp)$
+nrg_exp:subst(0, dA*dE*dv*rho, nrg_exp)$
+nrg_exp:subst(0, A*dE*dv*rho, nrg_exp)$
+nrg_exp:subst(0, E*dA*dv*rho, nrg_exp)$
+nrg_exp:subst(0, dA*dv*p, nrg_exp)$
+nrg_exp:subst(0, dA*dE*dr*dv, nrg_exp)$
+nrg_exp:subst(0, A*dE*dr*dv, nrg_exp)$
+nrg_exp:subst(0, E*dA*dr*dv, nrg_exp)$
+nrg_exp:subst(0, A*E*dr*dv, nrg_exp)$
+nrg_exp:subst(0, dA*dp*dv, nrg_exp)$
+nrg_exp:subst(0, A*dp*dv, nrg_exp)$
+
+/* We need to get rid of dE here */
+nrg_exp:subst(du+v*dv, dE, nrg_exp)$
+nrg_exp:fullratsimp(nrg_exp);
+
+eos_exp:dfdr*dr + dfdu*du - dp;
+
+/* Split dp into dp_dga and dp_chem */
+
+mass_exp:subst(dp_gda+dp_chem, dp, mass_exp);
+mom_exp:subst(dp_gda+dp_chem, dp, mom_exp);
+nrg_exp:subst(dp_gda+dp_chem, dp, nrg_exp);
+eos_exp:subst(dp_gda+dp_chem, dp, eos_exp);
+
+Ab:augcoefmatrix([mass_exp, mom_exp, nrg_exp, eos_exp], [dr, dv, dp_gda, du])$
+
+b:-col(Ab, 5);
+Jac:matrix([Ab[1,1], Ab[1,2], Ab[1,3], Ab[1,4]], 
+           [Ab[2,1], Ab[2,2], Ab[2,3], Ab[2,4]], 
+           [Ab[3,1], Ab[3,2], Ab[3,3], Ab[3,4]], 
+           [Ab[4,1], Ab[4,2], Ab[4,3], Ab[4,4]]);
+
+
+Jinv:invert(Jac)$
+
+x:Jinv.b$
+
+display2d:false$
+dr:x[1,1]$
+fullratsimp(dr);
+
+dv:x[2,1]$
+fullratsimp(dv);
+
+dp_gda:x[3,1]$
+fullratsimp(dp_gda);
+
+du:x[4,1]$
+fullratsimp(du);
