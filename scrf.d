@@ -52,9 +52,10 @@ int main(string[] args)
     double x = 0.0;
     double L = 1.0;
     double rs = 0.05;
-    double rf = 0.10;
+    double rf = 0.05;
     double dt = 5e-7;
     double As = PI*rs*rs;
+    double f = 0.005;
 
     size_t nreserve = to!size_t(L/(v*dt))*2;
     writefln("Reserving space for %d simdatas", nreserve);
@@ -96,14 +97,20 @@ int main(string[] args)
         double dfdr = R*gs.T.re;
         double dfdu = gs.rho.re*R/cv;
 
-        // Compute the accommodation increments using expressions from Maxima.
+        // Friction factor
+        double diameter = sqrt(4.0*A/PI);
+        double tau = 1.0/8.0*f*rho*v*v;
+        double taupiDdx = tau*PI*diameter*dx;
 
+        // Compute the accommodation increments using expressions from Maxima.
         // We get slightly different dp_chems to nenzf1d. I wonder why?
         double denom = A*rho^^2*v^^2 - A*dfdr*rho^^2 - A*dfdu*p;
-        double drho =  -(dA*rho^^3*v^^2)/denom;
-        double dv = ((dA*dfdr*rho^^2 + dA*dfdu*p)*v)/denom;
-        double dp_gda = -((dA*dfdr*rho^^3 + A*dp_chem*rho^^2 + dA*dfdu*p*rho)*v^^2 - A*dfdr*dp_chem*rho^^2 - A*dfdu*dp_chem*p)/denom; // NNG with p_chem
-        double du_gda = -(dA*p*rho*v^^2)/denom;
+        double drho = -(dA*rho^^3*v^^2 + ((-rho^^2)-dfdu*rho)*taupiDdx)/denom;
+        double dv = -(((rho+dfdu)*taupiDdx-dA*dfdr*rho^^2-dA*dfdu*p)*v)/denom;
+        double dp_gda = ((dfdu*rho*taupiDdx-dA*dfdr*rho^^3-A*dp_chem*rho^^2-dA*dfdu*p*rho)*v^^2
+                        +(dfdr*rho^^2+dfdu*p)*taupiDdx+A*dfdr*dp_chem*rho^^2+A*dfdu*dp_chem*p)
+                        /denom;
+        double du_gda = ((rho*taupiDdx-dA*p*rho)*v^^2+(p-dfdr*rho)*taupiDdx)/denom;
 
         // Add the increments
         x = x + dx;
