@@ -55,7 +55,8 @@ int main(string[] args)
     double rf = 0.05;
     double dt = 5e-7;
     double As = PI*rs*rs;
-    double f = 0.005;
+    double f = 0.0;
+    double Hdot = 1e7; // Volumetric heat addition rate W/m3
 
     size_t nreserve = to!size_t(L/(v*dt))*2;
     writefln("Reserving space for %d simdatas", nreserve);
@@ -102,15 +103,19 @@ int main(string[] args)
         double tau = 1.0/8.0*f*rho*v*v;
         double taupiDdx = tau*PI*diameter*dx;
 
+        // Rayleigh heat addition (I did this derivation at 2330)
+        double Qdot = Hdot*A*dx;
+
         // Compute the accommodation increments using expressions from Maxima.
         // We get slightly different dp_chems to nenzf1d. I wonder why?
         double denom = A*rho^^2*v^^2 - A*dfdr*rho^^2 - A*dfdu*p;
-        double drho = -(dA*rho^^3*v^^2 + ((-rho^^2)-dfdu*rho)*taupiDdx)/denom;
-        double dv = -(((rho+dfdu)*taupiDdx-dA*dfdr*rho^^2-dA*dfdu*p)*v)/denom;
+        double drho = -(dA*rho^^3*v^^3+((-rho^^2)-dfdu*rho)*taupiDdx*v-Qdot*dfdu*rho)/(denom*v);
+        double dv = -(((rho+dfdu)*taupiDdx-dA*dfdr*rho^^2-dA*dfdu*p)*v+Qdot*dfdu)/denom;
         double dp_gda = ((dfdu*rho*taupiDdx-dA*dfdr*rho^^3-A*dp_chem*rho^^2-dA*dfdu*p*rho)*v^^2
-                        +(dfdr*rho^^2+dfdu*p)*taupiDdx+A*dfdr*dp_chem*rho^^2+A*dfdu*dp_chem*p)
-                        /denom;
-        double du_gda = ((rho*taupiDdx-dA*p*rho)*v^^2+(p-dfdr*rho)*taupiDdx)/denom;
+                         +Qdot*dfdu*rho*v+(dfdr*rho^^2+dfdu*p)*taupiDdx+A*dfdr*dp_chem*rho^^2
+                         +A*dfdu*dp_chem*p)/denom;
+        double du_gda = ((rho*taupiDdx-dA*p*rho)*v^^3+Qdot*rho*v^^2+(p-dfdr*rho)*taupiDdx*v
+                         -Qdot*dfdr*rho)/(denom*v);
 
         // Add the increments
         x = x + dx;
