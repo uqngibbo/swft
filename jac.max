@@ -1,0 +1,29 @@
+/* ---------------------------------------------------------
+Maxima File to compute analytic matrix inverse of a Q1D gas flow
+
+@author: Nick Gibbons
+-----------------------------------------------------------*/
+
+Jac:matrix([v*A,   rho*A,       0, 0],
+           [0,     rho*v,       1, 0],
+           [v*E*A, rho*(E+p)*A, 0, rho*v*A],
+           [dfdr,  0,        -1, dfdu]);
+
+b:matrix([-rho*v*dA], [-dp_chem], [-rho*v*A*du_chem - v*(rho*E+p)*dA], [0]);
+
+Jinv:invert(Jac)$
+
+x:Jinv.b$
+
+display2d:false$
+dr:x[1,1]$
+fullratsimp(dr);
+
+dv:x[2,1]$
+fullratsimp(dv);
+
+dp:x[3,1]$
+fullratsimp(dp);
+
+du:x[4,1]$
+fullratsimp(du);
