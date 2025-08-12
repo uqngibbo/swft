@@ -1,0 +1,17 @@
+# config.yaml
+# Example config file for scrf scramjet calculator
+# Nick Gibbons (2025-Aug)
+
+gas_file_name: "gm.lua"           # GDTk gas model file
+reaction_file_name: "rr.lua"      # GDTk reactions model file
+
+L: 1.0
+rs: 0.05
+rf: 0.05
+dt: 5e-7
+f: 0.0
+Hdot: 10000000.0
+T0: 361.0
+p0: 968.0
+v0: 3623.0
+Y0: {'air': 1.0}

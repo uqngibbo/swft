@@ -12,6 +12,47 @@ import dyaml;
 import nm.complex;
 import nm.number;
 
+struct Config {
+    string gas_file_name;
+    string reaction_file_name;
+    double L;
+    double rs;
+    double rf;
+    double dt;
+    double f;
+    double Hdot;
+    double T0;
+    double p0;
+    double v0;
+    double[string] Y0;
+
+    this(string filename){
+        Node data = dyaml.Loader.fromFile(filename).load();
+
+        gas_file_name      = data["gas_file_name"].as!string;
+        reaction_file_name = data["reaction_file_name"].as!string;
+
+        L    = to!double(data["L"].as!string);
+        rs   = to!double(data["rs"].as!string);
+        rf   = to!double(data["rf"].as!string);
+        dt   = to!double(data["dt"].as!string);
+        f    = to!double(data["f"].as!string);
+        Hdot = to!double(data["Hdot"].as!string);
+        T0   = to!double(data["T0"].as!string);
+        p0   = to!double(data["p0"].as!string);
+        v0   = to!double(data["v0"].as!string);
+
+        foreach(Node nd; data["Y0"].mappingKeys) {
+            string s = nd.as!string;
+            double Ys= to!double(data["Y0"][s].as!string);
+            Y0[s] = Ys;
+        }
+
+        // Optional parameters
+        return;
+    }
+}
+
 struct SimData {
     double p,T,rho,A,v,M,gamma;
 }

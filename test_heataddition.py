@@ -57,7 +57,7 @@ def read_solution_file(filename):
 
     return data
 
-data = read_solution_file('solution.bin')
+data = read_solution_file('scrf.bin')
 gamma = data['gamma'][0]
 M0 = data['M'][0]
 

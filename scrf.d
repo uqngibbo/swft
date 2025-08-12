@@ -34,30 +34,35 @@ int main(string[] args)
     int exitFlag = 0;
 
     writefln("Hello world!");
-    GasModel gm = init_gas_model("gm.lua");
-    GasState gs = GasState(gm);
-    SimData[] simdata;
-    double[] xs;
+    string config_file_name = "scrf.yaml";
+    if (args.length>1) config_file_name = args[1];
+    Config cfg = Config(config_file_name);
 
-    gs.p = 968.0;
-    gs.T = 361.0;
+    GasModel gm = init_gas_model(cfg.gas_file_name);
+    GasState gs = GasState(gm);
+
+    gs.p = cfg.p0;
+    gs.T = cfg.T0;
+    foreach(sp,mf; cfg.Y0) gs.massf[gm.species_index(sp)] = mf;
     gm.update_thermo_from_pT(gs);
     gm.update_sound_speed(gs);
 
-    double v = 3623.0;
+    double v = cfg.v0;
 	double M = v/gs.a.re;
     writefln("M: %s", M);
     writefln("gs: %s", gs);
 
     double x = 0.0;
-    double L = 1.0;
-    double rs = 0.05;
-    double rf = 0.05;
-    double dt = 5e-7;
+    double L = cfg.L;
+    double rs = cfg.rs;
+    double rf = cfg.rf;
+    double dt = cfg.dt;
     double As = PI*rs*rs;
-    double f = 0.0;
-    double Hdot = 1e7; // Volumetric heat addition rate W/m3
+    double f = cfg.f;
+    double Hdot = cfg.Hdot; // Volumetric heat addition rate W/m3
 
+    SimData[] simdata;
+    double[] xs;
     size_t nreserve = to!size_t(L/(v*dt))*2;
     writefln("Reserving space for %d simdatas", nreserve);
     simdata.reserve(nreserve);
@@ -148,7 +153,10 @@ int main(string[] args)
     writeln("");
     writefln("Done in %d iters: x=%f v=%f M=%f", iter, x, v, M);
     writefln("Out gs: %s", gs);
-    write_solution_to_file(xs, simdata, "solution.bin");
+
+    string output_file_name = format("%s.bin", config_file_name.chomp(".yaml"));
+    writefln("Writing solution to file %s...", output_file_name);
+    write_solution_to_file(xs, simdata, output_file_name);
 
     return exitFlag;
 } // end main()
