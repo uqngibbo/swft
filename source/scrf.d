@@ -39,8 +39,8 @@ void progress_bar(double x, double L){
 }
 
 void print_state(string name, double v, double M, double A, ref GasState gs, GasModel gm){
-    writefln("%4s State: v=%3.3f (m/s) rho=%3.3f (g/m3) p=%3.3f kPa", name, v, gs.rho.re*1000.0, gs.T.re, gs.p.re/1000.0);
-    writefln("            M=%3.3f A=%3.3f (m2) a=%3.3f (m/s) ", M, A, gs.a.re);
+    writefln("%4s State: v=%3.3f (m/s) T=%3.3f (K) p=%3.3f Pa", name, v, gs.T.re, gs.p.re);
+    writefln("            M=%3.3f rho=%3.3f (g/m3) A=%3.3f (m2) a=%3.3f (m/s) ", M, gs.rho.re*1000.0, A, gs.a.re);
     write("massf: [");
     foreach(isp; 0 .. gm.n_species){
         writef("%s:%3.3e", gm.species_name(isp), gs.massf[isp].re);
@@ -66,6 +66,7 @@ int main(string[] args)
     foreach(sp,mf; cfg.Y0) gs.massf[gm.species_index(sp)] = mf;
     gm.update_thermo_from_pT(gs);
     gm.update_sound_speed(gs);
+    writefln("Start p: %e", gs.p);
 
     double v = cfg.v0;
 	double M = v/gs.a.re;
@@ -80,6 +81,7 @@ int main(string[] args)
     double Hdot = cfg.Hdot; // Volumetric heat addition rate W/m3
 
     print_state("Init", v, M, As, gs, gm);
+    writefln("Start p: %e", gs.p);
 
     SimData[] simdata;
     double[] xs;

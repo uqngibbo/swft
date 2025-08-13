@@ -4,10 +4,11 @@ Test code for edict, currently conduction only.
 @author: Nick
 """
 
-from numpy import array, zeros, interp, frombuffer, array, concatenate
+from numpy import array, zeros, interp, frombuffer, array, concatenate, isclose
 import struct
 from io import BytesIO, BufferedWriter
 import matplotlib.pyplot as plt
+import subprocess
 
 # Validate using steady-isentropic flow formulas from Frank White, Ch 9
 
@@ -62,47 +63,68 @@ def read_solution_file(filename):
 
     return data
 
-data = read_solution_file('solution.bin')
-gamma = data['gamma'][0]
-M0 = data['M'][0]
+def test_runscrf():
+    cmd = "scrf area_change.yaml"
+    proc = subprocess.run(cmd.split(), capture_output=True, text=True)
+    assert proc.returncode == 0, "Failed cmd: "+cmd
 
-ref = {}
-every = 10
-ref['M'] = data['M'][::every]
-ref['x'] = data['x'][::every]
-Mref = ref['M']
-ref['A'] = data['A'][0]*A_on_A0(M0, Mref, gamma)
-ref['T'] = data['T'][0]*T_on_T0(M0, Mref, gamma)
-ref['p'] = data['p'][0]*p_on_p0(M0, Mref, gamma)
-ref['rho'] = data['rho'][0]*rho_on_rho0(M0, Mref, gamma)
+def test_output():
+    data = read_solution_file('area_change.bin')
+
+    assert isclose(data['M'][-1], 12.734, 1e-4)
+    assert isclose(data['v'][-1], 3665.695, 1e-4)
+    assert isclose(data['rho'][-1], 2.299e-3, 1e-4)
+    assert isclose(data['p'][-1], 136.089, 1e-4)
+    assert isclose(data['T'][-1], 206.159, 1e-4)
+
+def test_cleanup():
+    cmd = "rm area_change.bin"
+    proc = subprocess.run(cmd.split(), capture_output=True, text=True)
+    assert proc.returncode == 0, "Failed cmd: "+cmd
+    
+if __name__=='__main__':
+    data = read_solution_file('area_change.bin')
+    print("data[p]", data['p'])
+    gamma = data['gamma'][0]
+    M0 = data['M'][0]
+
+    ref = {}
+    every = 10
+    ref['M'] = data['M'][::every]
+    ref['x'] = data['x'][::every]
+    Mref = ref['M']
+    ref['A'] = data['A'][0]*A_on_A0(M0, Mref, gamma)
+    ref['T'] = data['T'][0]*T_on_T0(M0, Mref, gamma)
+    ref['p'] = data['p'][0]*p_on_p0(M0, Mref, gamma)
+    ref['rho'] = data['rho'][0]*rho_on_rho0(M0, Mref, gamma)
 
 
-fig = plt.figure(figsize=(10,8))
-axes = fig.subplots(2,2)
+    fig = plt.figure(figsize=(10,8))
+    axes = fig.subplots(2,2)
 
-axes[0,0].plot(data['x'], data['T'], 'r-')
-axes[0,0].plot(ref['x'], ref['T'], 'r.')
-axes[0,0].set_xlabel('x (m)')
-axes[0,0].set_ylabel('Temperature (K)')
-axes[0,0].grid()
+    axes[0,0].plot(data['x'], data['T'], 'r-')
+    axes[0,0].plot(ref['x'], ref['T'], 'r.')
+    axes[0,0].set_xlabel('x (m)')
+    axes[0,0].set_ylabel('Temperature (K)')
+    axes[0,0].grid()
 
-axes[0,1].plot(data['x'], data['rho'], 'g-')
-axes[0,1].plot(ref['x'], ref['rho'], 'g.')
-axes[0,1].set_xlabel('x (m)')
-axes[0,1].set_ylabel('density (kg/m3)')
-axes[0,1].grid()
+    axes[0,1].plot(data['x'], data['rho'], 'g-')
+    axes[0,1].plot(ref['x'], ref['rho'], 'g.')
+    axes[0,1].set_xlabel('x (m)')
+    axes[0,1].set_ylabel('density (kg/m3)')
+    axes[0,1].grid()
 
-axes[1,0].plot(data['x'], data['A'], 'k-')
-axes[1,0].plot(ref['x'], ref['A'], 'k.')
-axes[1,0].set_xlabel('x (m)')
-axes[1,0].set_ylabel('Area (m2)')
-axes[1,0].grid()
+    axes[1,0].plot(data['x'], data['A'], 'k-')
+    axes[1,0].plot(ref['x'], ref['A'], 'k.')
+    axes[1,0].set_xlabel('x (m)')
+    axes[1,0].set_ylabel('Area (m2)')
+    axes[1,0].grid()
 
-axes[1,1].plot(data['x'], data['p'], 'b-')
-axes[1,1].plot(ref['x'], ref['p'], 'b.')
-axes[1,1].set_xlabel('x (m)')
-axes[1,1].set_ylabel('Pressure (Pa)')
-axes[1,1].grid()
+    axes[1,1].plot(data['x'], data['p'], 'b-')
+    axes[1,1].plot(ref['x'], ref['p'], 'b.')
+    axes[1,1].set_xlabel('x (m)')
+    axes[1,1].set_ylabel('Pressure (Pa)')
+    axes[1,1].grid()
 
-plt.tight_layout()
-plt.show()
+    plt.tight_layout()
+    plt.show()

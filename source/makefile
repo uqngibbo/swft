@@ -143,7 +143,7 @@ install: $(PROGRAMS)
 clean:
 	- rm *.o *.so
 	- rm $(PROGRAMS)
-	- rm -r $(BUILD_DIR)/*
+	- rm -rf $(BUILD_DIR)
 	- cd $(LUA_DIR); make clean
 	- cd $(GAS_DIR); make clean; rm libgas.a
 	- cd $(KINETICS_DIR); make clean
