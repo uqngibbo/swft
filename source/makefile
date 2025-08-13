@@ -135,7 +135,7 @@ install: $(PROGRAMS)
 	- cp scrf $(BUILD_DIR)/bin
 	cp $(LUA_DIR)/install/bin/* $(BUILD_DIR)/bin
 	cp $(LUA_DIR)/install/lib/lpeg.so $(BUILD_DIR)/lib
-	cp -r ../lib/* $(BUILD_DIR)/lib
+	cp -r $(DGD_REPO)/src/lib/* $(BUILD_DIR)/lib
 	@echo "Installing to $(INSTALL_DIR)"
 	- mkdir -p $(INSTALL_DIR)
 	cp -r $(BUILD_DIR)/* $(INSTALL_DIR)

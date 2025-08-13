@@ -28,12 +28,32 @@ import nm.bbla;
 import nm.number;
 import nm.complex;
 
+void progress_bar(double x, double L){
+    double percent = x/L*100.0;
+    int filled = to!int(x/L*60);
+    write("\r[");
+    foreach(i; 0 .. filled) write('-');
+    foreach(i; filled .. 60) write(' ');
+    writef("] %3.0f%%\r", percent);
+    stdout.flush();
+}
+
+void print_state(string name, double v, double M, double A, ref GasState gs, GasModel gm){
+    writefln("%4s State: v=%3.3f (m/s) rho=%3.3f (g/m3) p=%3.3f kPa", name, v, gs.rho.re*1000.0, gs.T.re, gs.p.re/1000.0);
+    writefln("            M=%3.3f A=%3.3f (m2) a=%3.3f (m/s) ", M, A, gs.a.re);
+    write("massf: [");
+    foreach(isp; 0 .. gm.n_species){
+        writef("%s:%3.3e", gm.species_name(isp), gs.massf[isp].re);
+        if (isp!=gm.n_species-1) write(", ");
+    }
+    writeln("]");
+}
 
 int main(string[] args)
 {
     int exitFlag = 0;
+    writefln("scrf: A Q1D Flow Analysis Tool");
 
-    writefln("Hello world!");
     string config_file_name = "scrf.yaml";
     if (args.length>1) config_file_name = args[1];
     Config cfg = Config(config_file_name);
@@ -49,8 +69,6 @@ int main(string[] args)
 
     double v = cfg.v0;
 	double M = v/gs.a.re;
-    writefln("M: %s", M);
-    writefln("gs: %s", gs);
 
     double x = 0.0;
     double L = cfg.L;
@@ -60,6 +78,8 @@ int main(string[] args)
     double As = PI*rs*rs;
     double f = cfg.f;
     double Hdot = cfg.Hdot; // Volumetric heat addition rate W/m3
+
+    print_state("Init", v, M, As, gs, gm);
 
     SimData[] simdata;
     double[] xs;
@@ -82,7 +102,7 @@ int main(string[] args)
 
     size_t iter = 0; 
     bool last_step = false;
-    write("Running"); stdout.flush();
+    writeln("Running...");
     while (x<=L) {
         double r = (x-0.0)/L*(rf-rs) + rs;
         double A = PI*r*r;
@@ -144,16 +164,14 @@ int main(string[] args)
         xs ~= x;
 
         iter += 1;
-		if (iter%50==0){ // Progress bar maybe
-			write(".");
-            stdout.flush();
-		}
+        if ((iter%20==0)||(last_step)){
+            progress_bar(x, L);
+        }
         if (last_step) break;
     }
     writeln("");
-    writefln("Done in %d iters: x=%f v=%f M=%f", iter, x, v, M);
-    writefln("Out gs: %s", gs);
-
+    writefln("Done in %d iters", iter);
+    print_state(" End", v, M, As, gs, gm);
     string output_file_name = format("%s.bin", config_file_name.chomp(".yaml"));
     writefln("Writing solution to file %s...", output_file_name);
     write_solution_to_file(xs, simdata, output_file_name);
