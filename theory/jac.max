@@ -1,29 +1,53 @@
 /* ---------------------------------------------------------
-Maxima File to compute analytic matrix inverse of a Q1D gas flow
+Maxima File to compute linearised conservation eqns for scrf
 
 @author: Nick Gibbons
 -----------------------------------------------------------*/
 
-Jac:matrix([v*A,   rho*A,       0, 0],
-           [0,     rho*v,       1, 0],
-           [v*E*A, rho*(E+p)*A, 0, rho*v*A],
-           [dfdr,  0,        -1, dfdu]);
+mass:rho*v*A - rho1*v1*A1;
+mom:rho*v*v*A + p*A - rho1*v1*v1*A1 - p1*A1 + c*f*rho*v*v;
+nrg:rho*v*A*(u+v*v/2) + p*A*v - rho1*v1*A1*E1 - p1*A1*v1;
+eos:p-rho*u/cv;
 
-b:matrix([-rho*v*dA], [-dp_chem], [-rho*v*A*du_chem - v*(rho*E+p)*dA], [0]);
+/* Okay this matches what you get when you do all the substitution */
 
-Jinv:invert(Jac)$
+J:matrix([diff(mass, rho), diff(mass, v), diff(mass, p), diff(mass, u)],
+         [diff(mom, rho), diff(mom, v), diff(mom, p), diff(mom, u)],
+         [diff(nrg, rho), diff(nrg, v), diff(nrg, p), diff(nrg, u)],
+         [diff(eos, rho), diff(eos, v), diff(eos, p), diff(eos, u)])$
 
-x:Jinv.b$
+/*
+J:matrix([v*A,   rho*A,       0, 0],
+         [0,     rho*v,       1, 0],
+         [v*E*A, rho*(E+p)*A, 0, rho*v*A],
+         [dfdr,  0,        -1, dfdu]);
+*/
+
+minus_dRdf:matrix([diff(mass, f)], [diff(mom,f)], [diff(nrg, f)], [diff(eos, f)]);
+
+Jinv:invert(J)$
+
+dUdf:Jinv.minus_dRdf$
 
 display2d:false$
-dr:x[1,1]$
-fullratsimp(dr);
 
-dv:x[2,1]$
-fullratsimp(dv);
+drdf:dUdf[1,1]$
+drdf:fullratsimp(drdf)$
+bot:denom(drdf);
+drdf:subst(D, bot, drdf);
+print("")$
 
-dp:x[3,1]$
-fullratsimp(dp);
+dvdf:dUdf[2,1]$
+dvdf:fullratsimp(dvdf)$
+dvdf:subst(D, bot, dvdf);
+print("")$
 
-du:x[4,1]$
-fullratsimp(du);
+dpdf:dUdf[3,1]$
+dpdf:fullratsimp(dpdf)$
+dpdf:subst(D, bot, dpdf);
+print("")$
+
+dudf:dUdf[4,1]$
+dudf:fullratsimp(dudf)$
+dudf:subst(D, bot, dudf);
+print("")$
