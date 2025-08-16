@@ -53,9 +53,34 @@ struct Config {
     }
 }
 
+struct Primitives {
+    double rho,p,v,u;
+
+    Primitives opBinary(string op)(in Primitives rhs) if ( op == "+" || op == "-" || op == "*" || op == "/"  ) {
+		return mixin("Primitives(rho"~op~"rhs.rho, p"~op~"rhs.p, v"~"rhs.v, u"~op~"rhs.u)");
+    }
+
+    string toString() const
+    {
+        char[] repr;
+        repr ~= "Primitives(";
+        repr ~= format("rho=%12.12e, ", rho);
+        repr ~= format("p=%12.12e, ", p);
+        repr ~= format("v=%12.12e, ", v);
+        repr ~= format("u=%12.12e)", u);
+        return to!string(repr);
+    }
+
+}
+
+// Maybe there should be another one called Primitives or something??
 struct SimData {
     double p,T,rho,A,v,M,gamma;
+
+
 }
+
+
 
 void write_solution_to_file(double[] xs, SimData[] simdata, string filename){
 
