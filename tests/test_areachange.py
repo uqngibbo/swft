@@ -8,9 +8,16 @@ from numpy import array, zeros, interp, frombuffer, array, concatenate, isclose
 import struct
 from io import BytesIO, BufferedWriter
 import matplotlib.pyplot as plt
+from scipy.optimize import brentq
 import subprocess
 
 # Validate using steady-isentropic flow formulas from Frank White, Ch 9
+
+def A_on_Astar(M, gamma):
+    a = 1.0 + 0.5*(gamma-1)*M**2
+    b = 0.5*(gamma+1)
+    c = 0.5*(gamma+1)/(gamma-1)
+    return 1.0/M*(a/b)**c
 
 def A_on_A0(M0, M, gamma):
     top = 1/M* ((1+0.5*(gamma-1)*M**2) /(0.5*(gamma+1)))**(0.5*(gamma+1)/(gamma-1))
@@ -71,11 +78,11 @@ def test_runscrf():
 def test_output():
     data = read_solution_file('area_change.bin')
 
-    assert isclose(data['M'][-1], 12.734, 1e-4)
+    assert isclose(data['M'][-1], 12.727, 1e-4)
     assert isclose(data['v'][-1], 3665.695, 1e-4)
-    assert isclose(data['rho'][-1], 2.299e-3, 1e-4)
-    assert isclose(data['p'][-1], 136.089, 1e-4)
-    assert isclose(data['T'][-1], 206.159, 1e-4)
+    assert isclose(data['rho'][-1], 2.29927e-3, 1e-4)
+    assert isclose(data['p'][-1], 135.537, 1e-4)
+    assert isclose(data['T'][-1], 206.373, 1e-4)
 
 def test_cleanup():
     cmd = "rm area_change.bin"
@@ -84,21 +91,33 @@ def test_cleanup():
     
 if __name__=='__main__':
     data = read_solution_file('area_change.bin')
-    print("data[p]", data['p'])
     gamma = data['gamma'][0]
     M0 = data['M'][0]
+    A0 = data['A'][0]
+    Astar = A0/A_on_Astar(M0, gamma)
 
     ref = {}
+    Mref = []
     every = 10
-    ref['M'] = data['M'][::every]
+    for Ai in data['A'][::every]:
+        function = lambda Mguess : Ai/Astar - A_on_Astar(Mguess, gamma)
+        Me = brentq(function, 1.0, 16.0)
+        Mref.append(Me)
+
+    Mref = array(Mref)
+    ref['M'] = Mref
     ref['x'] = data['x'][::every]
-    Mref = ref['M']
     ref['A'] = data['A'][0]*A_on_A0(M0, Mref, gamma)
     ref['T'] = data['T'][0]*T_on_T0(M0, Mref, gamma)
     ref['p'] = data['p'][0]*p_on_p0(M0, Mref, gamma)
     ref['rho'] = data['rho'][0]*rho_on_rho0(M0, Mref, gamma)
+    
+    print("L2 error M:   ", (((ref['M']-data['M'][::every])**2).sum()/Mref.size)**0.5)
+    print("L2 error T:   ", (((ref['T']-data['T'][::every])**2).sum()/Mref.size)**0.5)
+    print("L2 error p:   ", (((ref['p']-data['p'][::every])**2).sum()/Mref.size)**0.5)
+    print("L2 error rho: ", (((ref['rho']-data['rho'][::every])**2).sum()/Mref.size)**0.5)
 
-
+    print("data['M'][-1]", data['M'][-1])
     fig = plt.figure(figsize=(10,8))
     axes = fig.subplots(2,2)
 
@@ -114,10 +133,10 @@ if __name__=='__main__':
     axes[0,1].set_ylabel('density (kg/m3)')
     axes[0,1].grid()
 
-    axes[1,0].plot(data['x'], data['A'], 'k-')
-    axes[1,0].plot(ref['x'], ref['A'], 'k.')
+    axes[1,0].plot(data['x'], data['M'], 'k-')
+    axes[1,0].plot(ref['x'], ref['M'], 'k.')
     axes[1,0].set_xlabel('x (m)')
-    axes[1,0].set_ylabel('Area (m2)')
+    axes[1,0].set_ylabel('Mach Number')
     axes[1,0].grid()
 
     axes[1,1].plot(data['x'], data['p'], 'b-')
