@@ -15,3 +15,5 @@ T0: 361.0
 p0: 968.0
 v0: 3623.0
 Y0: {'air': 1.0}
+
+calc_derivatives: true

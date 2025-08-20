@@ -25,6 +25,7 @@ struct Config {
     double p0;
     double v0;
     double[string] Y0;
+    bool calc_derivatives = false;
 
     this(string filename){
         Node data = dyaml.Loader.fromFile(filename).load();
@@ -49,6 +50,9 @@ struct Config {
         }
 
         // Optional parameters
+        if ("calc_derivatives" in data) {
+            calc_derivatives = to!bool(data["calc_derivatives"].as!string);
+        }
         return;
     }
 }

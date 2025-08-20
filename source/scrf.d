@@ -333,9 +333,8 @@ int main(string[] args)
 
     Primitives P0 = Primitives(gs.rho.re, gs.p.re, v, gs.u.re);
     Primitives dPdf0 = Primitives(0.0, 0.0, 0.0, 0.0);
-    double[3] U0 = [P0.rho,
-                    P0.rho*v,
-                    P0.rho*(P0.u + 0.5*v*v)];
+    Primitives dPdf;
+
     simderivs~= SimData(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
     simdata ~= SimData(P0.p, gs.T.re, P0.rho, As, P0.v, M, gamma);
     xs ~= x;
@@ -357,12 +356,10 @@ int main(string[] args)
         double A1 = PI*r1*r1;
         double dA = A1-A;
 
-        Primitives P1 = increment_primitives(x, A, dx, dA, Hdot, f,     P0, gm, gs);
-        Primitives dPdf = f_derivative(P0, P1, dPdf0, f, dA, A, A1, dx, gs2, gm);
-
-        //double[3] U1  = increment_conserved( x, A, dx, dA, Hdot, f, P0, gm, gs);
-        //Primitives P1c =  decode_conserved(U1, gm, gs);
-        //Primitives P1 = P1p;
+        Primitives P1 = increment_primitives(x, A, dx, dA, Hdot, f, P0, gm, gs);
+        if (cfg.calc_derivatives) {
+            dPdf = f_derivative(P0, P1, dPdf0, f, dA, A, A1, dx, gs2, gm);
+        }
 
         // Add the increments
         x = x + dx;
@@ -370,7 +367,6 @@ int main(string[] args)
         gs.u = P1.u;
         gs.p = P1.p;
         gs.T = temp_from_u(gs, gm);
-        //gs.T = gs.T.re;
         gm.update_sound_speed(gs);
         gamma = gm.gamma(gs).re;
 
@@ -378,14 +374,16 @@ int main(string[] args)
         simdata ~= SimData(P1.p, gs.T.re, P1.rho, A, P1.v, M, gamma);
         xs ~= x;
         P0 = P1;
-        simderivs ~= SimData(dPdf.p, 0.0, dPdf.rho, dA/dx, dPdf.v, 0.0, 0.0);
-        dPdf0 = dPdf;
+
+        if (cfg.calc_derivatives){
+            simderivs ~= SimData(dPdf.p, 0.0, dPdf.rho, dA/dx, dPdf.v, 0.0, 0.0);
+            dPdf0 = dPdf;
+        }
 
         iter += 1;
         if ((iter%20==0)||(last_step)){
             progress_bar(x, L);
         }
-        if (iter==3) break;
         if (last_step) break;
     }
     writeln("");
@@ -396,9 +394,11 @@ int main(string[] args)
     writefln("Writing solution to file %s...", output_file_name);
     write_solution_to_file(xs, simdata, output_file_name);
 
-    string derivs_file_name = format("derivs-%s.bin", config_file_name.chomp(".yaml"));
-    writefln("Writing derivs to file %s...", derivs_file_name);
-    write_solution_to_file(xs, simderivs, derivs_file_name);
+    if (cfg.calc_derivatives) {
+        string derivs_file_name = format("derivs-%s.bin", config_file_name.chomp(".yaml"));
+        writefln("Writing derivs to file %s...", derivs_file_name);
+        write_solution_to_file(xs, simderivs, derivs_file_name);
+    }
 
     return exitFlag;
 } // end main()
