@@ -29,6 +29,9 @@ def T_on_Tstar(M, gamma):
     return (gamma+1)/(2+(gamma-1)*M**2)
 
 def read_solution_file(filename):
+    if not filename.endswith('.bin'):
+        raise Exception("Wrong file extension for file {}".format(filename))
+
     with open(filename, 'rb') as fp:
         bytes = fp.read()
 
