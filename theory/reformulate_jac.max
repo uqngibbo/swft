@@ -1,0 +1,47 @@
+/* ---------------------------------------------------------
+Maxima File to compute linearised conservation eqns for scrf
+
+ - Instead of PJ's version, this one is a bit different.
+
+@author: Nick Gibbons
+-----------------------------------------------------------*/
+
+/*
+mass:rho;
+mom:rho*v;
+nrg:rho*(u+v*v/2);
+v:mom/mass;
+p:mom*(gamma-1);
+*/
+
+/* Just now I rederived a new version of this */
+Fmass:mom;
+Fmom:(gamma-1)*nrg + mom^2/mass*(3-gamma)/2;
+Fnrg:gamma*nrg*mom/mass - (gamma-1)/2*mom^3/mass/mass;
+
+
+
+display2d:false$
+J:matrix([diff(Fmass,mass), diff(Fmass,mom), diff(Fmass, nrg)],
+         [diff(Fmom, mass), diff(Fmom, mom), diff(Fmom, nrg)],
+         [diff(Fnrg, mass), diff(Fnrg, mom), diff(Fnrg, nrg)]);
+
+Jp:subst(rho, mass, J);
+Jp:subst(rho*v, mom, Jp);
+Jp:subst(rho*(u+0.5*v*v), nrg, Jp);
+
+
+Fm1:matrix([Fmass1_Ast], [Fmom1_Ast], [Fnrg1_Ast]);
+
+ratprint: false$
+Jp:factor(fullratsimp(Jp));
+
+Jpinv:invert(Jp)$
+
+DeltaU:Jpinv.-Fm1;
+
+display2d:false$
+dmass= factor(fullratsimp(DeltaU[1,1]));
+dmom = factor(fullratsimp(DeltaU[2,1]));
+dnrg = factor(fullratsimp(DeltaU[3,1]));
+
