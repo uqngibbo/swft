@@ -21,10 +21,12 @@ Clone the GDTk repository:
 
 Build the code:
 
-    cd source
-    make
+    git clone git@github.com:uqngibbo/scrf.git
+    cd scrf/source
+    make install
 
-## Author: Nick Gibbons
+## Author:
+Nick Gibbons (n.gibbons@uq.edu.au)
 
 ## License:
 This Code Should Not Be Used By Anyone Under Any Circumstances
