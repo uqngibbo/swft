@@ -216,8 +216,8 @@ void check_flux(Primitives P0, Primitives P1, double A0, double dA, double dx, d
 
 }
 
-Primitives f_derivative(Primitives P0, Primitives P1, double f, double dA, double A0,
-                                           double A1, double dx, GasState gs, GasModel gm){
+Primitives step_zero_f_derivative(Primitives P0, Primitives P1, double f, double dA,
+                                  double A0, double A1, double dx, GasState gs, GasModel gm){
     double rho = P1.rho;
     double p = P1.p;
     double v = P1.v;
@@ -245,11 +245,6 @@ Primitives f_derivative(Primitives P0, Primitives P1, double f, double dA, doubl
     double nrg=rho*v*A*(u+v*v/2) + p*A*v - rho0*v0*A0*(u0+v0*v0/2) - p0*A0*v0;
     double eos=p-rho*R*u/cv;
 
-    writefln("mass %e", mass);
-    writefln("mom %e", mom);
-    writefln("nrg %e (%e vs. %e)", nrg, (rho*v*A*(u+v*v/2) + p*A*v), rho0*v0*A0*(u0+v0*v0/2) + p0*A0*v0);
-    writefln("eos %e", eos);
-
     double D = (R*dA+2*A*cv)*rho*v^^2+(R*dA-2*A*R)*rho*u+(R*dA-2*A*R)*p;
     double drdf = ((2*c*cv+2*R*c)*rho*rho0*v0^^2)/D;
     double dvdf = -((2*c*cv+2*R*c)*rho0*v*v0^^2)/D;
@@ -259,6 +254,77 @@ Primitives f_derivative(Primitives P0, Primitives P1, double f, double dA, doubl
 
     return Primitives(rho=drdf, p=dpdf, v=dvdf, u=dudf);
 }
+
+Primitives f_derivative(Primitives P1, Primitives P2, Primitives dP1df, double f, double dA,
+                        double A1, double A2, double dx, GasState gs, GasModel gm){
+    double rho = P2.rho;
+    double p = P2.p;
+    double v = P2.v;
+    double u = P2.u;
+
+    double rho1 = P1.rho;
+    double p1 = P1.p;
+    double v1 = P1.v;
+    double u1 = P1.u;
+
+    gs.u = u;
+    gs.rho = rho;
+    gs.p = p;
+    gs.T = temp_from_u(gs, gm);
+
+	double diameter = sqrt(4.0*A1/PI);
+	double c = 1.0/8.0*PI*diameter*dx;
+
+	double cv = gm.dudT_const_v(gs).re;
+	double R = gm.gas_constant(gs).re;
+    double A = A2;
+
+    double dr1df = dP1df.rho;
+    double dv1df = dP1df.v;
+    double dp1df = dP1df.p;
+    double du1df = dP1df.u;
+
+    double rhs0 = A1*dr1df*v1+A1*dv1df*rho1;
+    double rhs1 = dr1df*(A1*v1^^2-c*f*v1^^2)-c*rho1*v1^^2
+                                       +dv1df*(2*A1*rho1*v1-2*c*f*rho1*v1)
+                                       +(dA/2+A1)*dp1df;
+    double rhs2 = dv1df*(A1*rho1*v1^^2+A1*rho1*(v1^^2/2+u1)+A1*p1)
+                +A1*dr1df*v1*(v1^^2/2+u1)+A1*du1df*rho1*v1+A1*dp1df*v1;
+    double rhs3 = 0.0;
+
+
+    double drdf = ((3*R*dA+8*A*cv+2*A*R)*rho*rhs0*v^^2
+     +((4*A^^2*cv-2*A*cv*dA)*rho*rhs3+((-4*A*cv)-4*A*R)*rho*rhs1)*v
+      +(2*R*dA-4*A*R)*rho*rhs0*u+(4*A*R-2*R*dA)*rho*rhs2+(2*R*dA-4*A*R)*p*rhs0)
+     /((2*A*R*dA+4*A^^2*cv)*rho*v^^3+((2*A*R*dA-4*A^^2*R)*rho*u+(2*A*R*dA-4*A^^2*R)*p)
+                                    *v);
+
+    double dvdf = -((R*dA+4*A*cv+2*A*R)*rhs0*v^^2+((4*A^^2*cv-2*A*cv*dA)*rhs3
+                                      +((-4*A*cv)-4*A*R)*rhs1)
+                                      *v+(4*A*R-2*R*dA)*rhs2)
+                 /((2*A*R*dA+4*A^^2*cv)*rho*v^^2+(2*A*R*dA-4*A^^2*R)*rho*u+(2*A*R*dA-4*A^^2*R)*p);
+
+    double dpdf = (R*rho*rhs0*v^^3+(2*A*cv*rho*rhs3-2*R*rho*rhs1)*v^^2
+                      +(2*R*rho*rhs0*u+2*R*rho*rhs2+2*R*p*rhs0)*v
+                      -2*R*rho*rhs1*u-2*R*p*rhs1)
+                   /((R*dA+2*A*cv)*rho*v^^2+(R*dA-2*A*R)*rho*u+(R*dA-2*A*R)*p);
+
+    double dudf = (2*A*cv*rho*rhs0*v^^4+((-2*A*cv*dA*rho*rhs3)-4*A*cv*rho*rhs1)*v^^3
+                           +(((-3*R*dA)-4*A*cv-2*A*R)*rho*rhs0*u
+                            +4*A*cv*rho*rhs2+4*A*cv*p*rhs0)
+                            *v^^2
+                           +(4*A*R*rho*rhs1*u+(4*A^^2*cv-2*A*cv*dA)*p*rhs3
+                                             -4*A*cv*p*rhs1)
+                            *v+(4*A*R-2*R*dA)*rho*rhs0*u^^2
+                           +((2*R*dA-4*A*R)*rho*rhs2+(4*A*R-2*R*dA)*p*rhs0)*u)
+                    /((2*A*R*dA+4*A^^2*cv)*rho^^2*v^^3+((2*A*R*dA-4*A^^2*R)*rho^^2*u
+                                 +(2*A*R*dA-4*A^^2*R)*p*rho)
+                                 *v);
+
+    return Primitives(rho=drdf, p=dpdf, v=dvdf, u=dudf);
+}
+
+
 
 
 int main(string[] args)
@@ -294,6 +360,7 @@ int main(string[] args)
 
     print_state("Init", v, M, As, gs, gm);
 
+    SimData[] simderivs;
     SimData[] simdata;
     double[] xs;
     size_t nreserve = to!size_t(L/(v*dt))*2;
@@ -304,9 +371,11 @@ int main(string[] args)
     double gamma = gm.gamma(gs).re;
 
     Primitives P0 = Primitives(gs.rho.re, gs.p.re, v, gs.u.re);
+    Primitives dPdf0 = Primitives(0.0, 0.0, 0.0, 0.0);
     double[3] U0 = [P0.rho,
                     P0.rho*v,
                     P0.rho*(P0.u + 0.5*v*v)];
+    simderivs~= SimData(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
     simdata ~= SimData(P0.p, gs.T.re, P0.rho, As, P0.v, M, gamma);
     xs ~= x;
 
@@ -327,16 +396,13 @@ int main(string[] args)
         double A1 = PI*r1*r1;
         double dA = A1-A;
 
-        double eps = 1e-7;
         Primitives P1 = increment_primitives(x, A, dx, dA, Hdot, f,     P0, gm, gs);
-        Primitives P1c= increment_primitives(x, A, dx, dA, Hdot, f+eps, P0, gm, gs);
-        Primitives dPdf_f = (P1c-P1)/eps;
-        Primitives dPdf_a = f_derivative(P0, P1, f, dA, A, A1, dx, gs2, gm);
-        writefln("dPdf_f-> %s", dPdf_f);
-        writefln("dPdf_a-> %s", dPdf_a);
-        writefln("  diff-> %s", (dPdf_a-dPdf_f)/dPdf_f*100.0);
-        if (M!=0.123) return 1;
-
+        Primitives dPdf;
+        if (iter==0) {
+            dPdf = step_zero_f_derivative(P0, P1, f, dA, A, A1, dx, gs2, gm);
+        } else {
+            dPdf = f_derivative(P0, P1, dPdf0, f, dA, A, A1, dx, gs2, gm);
+        }
 
         //double[3] U1  = increment_conserved( x, A, dx, dA, Hdot, f, P0, gm, gs);
         //Primitives P1c =  decode_conserved(U1, gm, gs);
@@ -356,19 +422,27 @@ int main(string[] args)
         simdata ~= SimData(P1.p, gs.T.re, P1.rho, A, P1.v, M, gamma);
         xs ~= x;
         P0 = P1;
+        simderivs ~= SimData(dPdf.p, 0.0, dPdf.rho, dA/dx, dPdf.v, 0.0, 0.0);
+        dPdf0 = dPdf;
 
         iter += 1;
         if ((iter%20==0)||(last_step)){
             progress_bar(x, L);
         }
+        if (iter==3) break;
         if (last_step) break;
     }
     writeln("");
     writefln("Done in %d iters", iter);
     print_state(" End", v, M, As, gs, gm);
+
     string output_file_name = format("%s.bin", config_file_name.chomp(".yaml"));
     writefln("Writing solution to file %s...", output_file_name);
     write_solution_to_file(xs, simdata, output_file_name);
+
+    string derivs_file_name = format("derivs-%s.bin", config_file_name.chomp(".yaml"));
+    writefln("Writing derivs to file %s...", derivs_file_name);
+    write_solution_to_file(xs, simderivs, derivs_file_name);
 
     return exitFlag;
 } // end main()
