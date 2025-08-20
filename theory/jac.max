@@ -5,7 +5,7 @@ Maxima File to compute linearised conservation eqns for scrf
 -----------------------------------------------------------*/
 
 mass:rho*v*A - rho1*v1*A1;
-mom:rho*v*v*A + p*A - rho1*v1*v1*A1 - p1*A1 + c*f*rho*v*v;
+mom:rho*v*v*A + p*A - rho1*v1*v1*A1 - p1*A1 -(p+p1)/2*dA + c*f*rho*v*v;
 nrg:rho*v*A*(u+v*v/2) + p*A*v - rho1*v1*A1*E1 - p1*A1*v1;
 eos:p-rho*u/cv;
 
@@ -14,7 +14,7 @@ eos:p-rho*u/cv;
 J:matrix([diff(mass, rho), diff(mass, v), diff(mass, p), diff(mass, u)],
          [diff(mom, rho), diff(mom, v), diff(mom, p), diff(mom, u)],
          [diff(nrg, rho), diff(nrg, v), diff(nrg, p), diff(nrg, u)],
-         [diff(eos, rho), diff(eos, v), diff(eos, p), diff(eos, u)])$
+         [diff(eos, rho), diff(eos, v), diff(eos, p), diff(eos, u)]);
 
 /*
 J:matrix([v*A,   rho*A,       0, 0],
@@ -23,11 +23,11 @@ J:matrix([v*A,   rho*A,       0, 0],
          [dfdr,  0,        -1, dfdu]);
 */
 
-minus_dRdf:matrix([diff(mass, f)], [diff(mom,f)], [diff(nrg, f)], [diff(eos, f)]);
+dRdf:matrix([diff(mass, f)], [diff(mom,f)], [diff(nrg, f)], [diff(eos, f)]);
 
 Jinv:invert(J)$
 
-dUdf:Jinv.minus_dRdf$
+dUdf:Jinv.-dRdf$
 
 display2d:false$
 
