@@ -4,21 +4,25 @@ scrf is a quasi-onedimensional compressible flow code for analysing supersonic f
 
 ## Build Instructions
 * Install dependancies
-   + sudo apt install build-essential libreadline-dev libncurses5-dev python3-cffi
+
+    sudo apt install build-essential libreadline-dev libncurses5-dev python3-cffi
 
 * Install the LLVM D compiler:
-    + wget https://github.com/ldc-developers/ldc/releases/download/v1.40.1/ldc2-1.40.1-linux-x86_64.tar.xz
-    + tar -xvf ldc2-1.41.1-linux-x86_64.tar.xz
-    + echo 'export PATH=${PATH}:${HOME}/ldc2-1.40.1-linux-x86_64/bin' >> .bashrc
-    + echo 'export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${HOME}/ldc2-1.40.1-linux-x86_64/lib' >> .bashrc
+
+    wget https://github.com/ldc-developers/ldc/releases/download/v1.40.1/ldc2-1.40.1-linux-x86_64.tar.xz
+    tar -xvf ldc2-1.41.1-linux-x86_64.tar.xz
+    echo 'export PATH=${PATH}:${HOME}/ldc2-1.40.1-linux-x86_64/bin' >> .bashrc
+    echo 'export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${HOME}/ldc2-1.40.1-linux-x86_64/lib' >> .bashrc
 
 * Clone the GDTk repository
-    + git clone https://github.com/gdtk-uq/gdtk.git gdtk
-    + echo 'export DGD_REPO=$HOME/gdtk' >> .bashrc
+
+     git clone https://github.com/gdtk-uq/gdtk.git gdtk
+     echo 'export DGD_REPO=$HOME/gdtk' >> .bashrc
 
 * Build the code
-    + cd source
-    + make
+
+    cd source
+    make
 
 ## Author: Nick Gibbons
 
