@@ -3,6 +3,13 @@
 
     References:
 
+    Todo List:
+     - Hdot derivations
+     - Python bindings
+     - Thermally Perfect Gas
+     - Reactions
+     - Wrapper code for optimisation
+
     @author: Nick Gibbons
 */
 
@@ -10,13 +17,9 @@ module scrf;
 
 import std.stdio;
 import std.math;
-import std.mathspecial;
 import std.format;
 import std.string;
 import std.conv;
-import std.datetime.stopwatch : StopWatch;
-import core.thread;
-import core.sys.posix.signal;
 
 // scrf specific modules
 import io;
@@ -284,8 +287,6 @@ Primitives f_derivative(Primitives P1, Primitives P2, Primitives dP1df, double f
 
     return Primitives(rho=drdf, p=dpdf, v=dvdf, u=dudf);
 }
-
-
 
 
 int main(string[] args)
