@@ -216,8 +216,49 @@ void check_flux(Primitives P0, Primitives P1, double A0, double dA, double dx, d
 
 }
 
+Primitives f_derivative(Primitives P0, Primitives P1, double f, double dA, double A0,
+                                           double A1, double dx, GasState gs, GasModel gm){
+    double rho = P1.rho;
+    double p = P1.p;
+    double v = P1.v;
+    double u = P1.u;
 
+    double rho0 = P0.rho;
+    double p0 = P0.p;
+    double v0 = P0.v;
+    double u0 = P0.u;
 
+    gs.u = u;
+    gs.rho = rho;
+    gs.p = p;
+    gs.T = temp_from_u(gs, gm);
+
+	double diameter = sqrt(4.0*A0/PI);
+	double c = 1.0/8.0*PI*diameter*dx;
+
+	double cv = gm.dudT_const_v(gs).re;
+	double R = gm.gas_constant(gs).re;
+    double A = A1;
+
+    double mass=rho*v*A - rho0*v0*A0;
+    double mom=rho*v*v*A + p*A - rho0*v0*v0*A0 - p0*A0 -(p+p0)/2*dA + c*f*rho0*v0*v0;
+    double nrg=rho*v*A*(u+v*v/2) + p*A*v - rho0*v0*A0*(u0+v0*v0/2) - p0*A0*v0;
+    double eos=p-rho*R*u/cv;
+
+    writefln("mass %e", mass);
+    writefln("mom %e", mom);
+    writefln("nrg %e (%e vs. %e)", nrg, (rho*v*A*(u+v*v/2) + p*A*v), rho0*v0*A0*(u0+v0*v0/2) + p0*A0*v0);
+    writefln("eos %e", eos);
+
+    double D = (R*dA+2*A*cv)*rho*v^^2+(R*dA-2*A*R)*rho*u+(R*dA-2*A*R)*p;
+    double drdf = ((2*c*cv+2*R*c)*rho*rho0*v0^^2)/D;
+    double dvdf = -((2*c*cv+2*R*c)*rho0*v*v0^^2)/D;
+    double dpdf = ((2*R*c*rho*rho0*v^^2+2*R*c*rho*rho0*u+2*R*c*p*rho0)*v0^^2)/D;
+    double dudf = ((2*c*cv*rho*rho0*v^^2-2*R*c*rho*rho0*u+2*c*cv*p*rho0)*v0^^2)
+                  /((R*dA+2*A*cv)*rho^^2*v^^2+(R*dA-2*A*R)*rho^^2*u+(R*dA-2*A*R)*p*rho);
+
+    return Primitives(rho=drdf, p=dpdf, v=dvdf, u=dudf);
+}
 
 
 int main(string[] args)
@@ -231,6 +272,7 @@ int main(string[] args)
 
     GasModel gm = init_gas_model(cfg.gas_file_name);
     GasState gs = GasState(gm);
+    GasState gs2= GasState(gm);
 
     gs.p = cfg.p0;
     gs.T = cfg.T0;
@@ -255,7 +297,7 @@ int main(string[] args)
     SimData[] simdata;
     double[] xs;
     size_t nreserve = to!size_t(L/(v*dt))*2;
-    writefln("Reserving space for %d simdatas", nreserve);
+    writefln("Timestep %e, Reserving space for %d simdatas", dt, nreserve);
     simdata.reserve(nreserve);
     xs.reserve(nreserve);
 
@@ -285,10 +327,20 @@ int main(string[] args)
         double A1 = PI*r1*r1;
         double dA = A1-A;
 
-        Primitives P1p = increment_primitives(x, A, dx, dA, Hdot, f, P0, gm, gs);
+        double eps = 1e-7;
+        Primitives P1 = increment_primitives(x, A, dx, dA, Hdot, f,     P0, gm, gs);
+        Primitives P1c= increment_primitives(x, A, dx, dA, Hdot, f+eps, P0, gm, gs);
+        Primitives dPdf_f = (P1c-P1)/eps;
+        Primitives dPdf_a = f_derivative(P0, P1, f, dA, A, A1, dx, gs2, gm);
+        writefln("dPdf_f-> %s", dPdf_f);
+        writefln("dPdf_a-> %s", dPdf_a);
+        writefln("  diff-> %s", (dPdf_a-dPdf_f)/dPdf_f*100.0);
+        if (M!=0.123) return 1;
+
+
         //double[3] U1  = increment_conserved( x, A, dx, dA, Hdot, f, P0, gm, gs);
         //Primitives P1c =  decode_conserved(U1, gm, gs);
-        Primitives P1 = P1p;
+        //Primitives P1 = P1p;
 
         // Add the increments
         x = x + dx;
