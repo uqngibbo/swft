@@ -50,7 +50,7 @@ void print_state(string name, double v, double M, double A, ref GasState gs, Gas
 }
 
 double temp_from_u(GasState gs, GasModel gm){
-	double cv = gm.dudT_const_v(gs).re;
+    double cv = gm.dudT_const_v(gs).re;
     return gs.u.re/cv;
 }
 
@@ -65,29 +65,29 @@ Primitives increment_primitives(double x, double A, double dx, double dA, double
 
     double gamma = gm.gamma(gs).re;
 
-	double R = gm.gas_constant(gs).re;
-	double cv = gm.dudT_const_v(gs).re;
-	double dfdr = R*gs.T.re;
-	double dfdu = gs.rho.re*R/cv;
+    double R = gm.gas_constant(gs).re;
+    double cv = gm.dudT_const_v(gs).re;
+    double dfdr = R*gs.T.re;
+    double dfdu = gs.rho.re*R/cv;
 
-	// Friction factor
-	double diameter = sqrt(4.0*A/PI);
-	double tau = 1.0/8.0*f*rho*v*v;
-	double taupiDdx = tau*PI*diameter*dx;
+    // Friction factor
+    double diameter = sqrt(4.0*A/PI);
+    double tau = 1.0/8.0*f*rho*v*v;
+    double taupiDdx = tau*PI*diameter*dx;
 
-	// Rayleigh heat addition (I did this derivation at 2330)
-	double Qdot = Hdot*A*dx;
+    // Rayleigh heat addition (I did this derivation at 2330)
+    double Qdot = Hdot*A*dx;
 
-	// Compute the accommodation increments using expressions from Maxima.
-	// We get slightly different dp_chems to nenzf1d. I wonder why?
-	double denom = A*rho^^2*v^^2 - A*dfdr*rho^^2 - A*dfdu*p;
-	double drho = -(dA*rho^^3*v^^3+((-rho^^2)-dfdu*rho)*taupiDdx*v-Qdot*dfdu*rho)/(denom*v);
-	double dv = -(((rho+dfdu)*taupiDdx-dA*dfdr*rho^^2-dA*dfdu*p)*v+Qdot*dfdu)/denom;
-	double dp_gda = ((dfdu*rho*taupiDdx-dA*dfdr*rho^^3-A*dp_chem*rho^^2-dA*dfdu*p*rho)*v^^2
-					 +Qdot*dfdu*rho*v+(dfdr*rho^^2+dfdu*p)*taupiDdx+A*dfdr*dp_chem*rho^^2
-					 +A*dfdu*dp_chem*p)/denom;
-	double du_gda = ((rho*taupiDdx-dA*p*rho)*v^^3+Qdot*rho*v^^2+(p-dfdr*rho)*taupiDdx*v
-					 -Qdot*dfdr*rho)/(denom*v);
+    // Compute the accommodation increments using expressions from Maxima.
+    // We get slightly different dp_chems to nenzf1d. I wonder why?
+    double denom = A*rho^^2*v^^2 - A*dfdr*rho^^2 - A*dfdu*p;
+    double drho = -(dA*rho^^3*v^^3+((-rho^^2)-dfdu*rho)*taupiDdx*v-Qdot*dfdu*rho)/(denom*v);
+    double dv = -(((rho+dfdu)*taupiDdx-dA*dfdr*rho^^2-dA*dfdu*p)*v+Qdot*dfdu)/denom;
+    double dp_gda = ((dfdu*rho*taupiDdx-dA*dfdr*rho^^3-A*dp_chem*rho^^2-dA*dfdu*p*rho)*v^^2
+                     +Qdot*dfdu*rho*v+(dfdr*rho^^2+dfdu*p)*taupiDdx+A*dfdr*dp_chem*rho^^2
+                     +A*dfdu*dp_chem*p)/denom;
+    double du_gda = ((rho*taupiDdx-dA*p*rho)*v^^3+Qdot*rho*v^^2+(p-dfdr*rho)*taupiDdx*v
+                     -Qdot*dfdr*rho)/(denom*v);
 
     return Primitives(rho = rho + drho,
                       p   = p   + dp_gda,
@@ -137,7 +137,7 @@ double[3] increment_conserved(double x, double A, double dx, double dA, double H
     double mass0 = P0.rho;
     double mom0  = P0.rho*P0.v;
     double nrg0  = P0.rho*(P0.u + 0.5*P0.v*P0.v);
-	writefln("dmass: %e dmom: %e dnrg: %e ", dmass, dmom, dnrg);
+    writefln("dmass: %e dmom: %e dnrg: %e ", dmass, dmom, dnrg);
 
     double[3] U1 = [mass0 + dmass, mom0+dmom, nrg0 + dnrg];
     return U1;
@@ -192,7 +192,7 @@ void check_flux(Primitives P0, Primitives P1, double A0, double dA, double dx, d
     double u = P0.u;
     double[3] dFdU0 = [0,1,0];
     double[3] dFdU1 = [(v^^2*(gamma-3))/2,-v*(gamma-3),gamma-1];
-	double[3] dFdU2 = [(v*(v^^2*gamma-2*u*gamma-2*v^^2))/2,-(2*v^^2*gamma-2*u*gamma-3*v^^2)/2,v*gamma];
+    double[3] dFdU2 = [(v*(v^^2*gamma-2*u*gamma-2*v^^2))/2,-(2*v^^2*gamma-2*u*gamma-3*v^^2)/2,v*gamma];
 
     double[3] dU = [mass1-mass0, mom1-mom0, nrg1-nrg0];
 
@@ -233,11 +233,11 @@ Primitives step_zero_f_derivative(Primitives P0, Primitives P1, double f, double
     gs.p = p;
     gs.T = temp_from_u(gs, gm);
 
-	double diameter = sqrt(4.0*A0/PI);
-	double c = 1.0/8.0*PI*diameter*dx;
+    double diameter = sqrt(4.0*A0/PI);
+    double c = 1.0/8.0*PI*diameter*dx;
 
-	double cv = gm.dudT_const_v(gs).re;
-	double R = gm.gas_constant(gs).re;
+    double cv = gm.dudT_const_v(gs).re;
+    double R = gm.gas_constant(gs).re;
     double A = A1;
 
     double mass=rho*v*A - rho0*v0*A0;
@@ -272,11 +272,11 @@ Primitives f_derivative(Primitives P1, Primitives P2, Primitives dP1df, double f
     gs.p = p;
     gs.T = temp_from_u(gs, gm);
 
-	double diameter = sqrt(4.0*A1/PI);
-	double c = 1.0/8.0*PI*diameter*dx;
+    double diameter = sqrt(4.0*A1/PI);
+    double c = 1.0/8.0*PI*diameter*dx;
 
-	double cv = gm.dudT_const_v(gs).re;
-	double R = gm.gas_constant(gs).re;
+    double cv = gm.dudT_const_v(gs).re;
+    double R = gm.gas_constant(gs).re;
     double A = A2;
 
     double dr1df = dP1df.rho;
@@ -347,7 +347,7 @@ int main(string[] args)
     gm.update_sound_speed(gs);
 
     double v = cfg.v0;
-	double M = v/gs.a.re;
+    double M = v/gs.a.re;
 
     double x = 0.0;
     double L = cfg.L;
