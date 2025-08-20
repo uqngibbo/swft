@@ -1,0 +1,33 @@
+
+expr0:a*x^2 + b*x + c - u0 = 0;
+expr1:a*(x-dx0)^2 + b*(x-dx0) + c - u1 = 0;
+expr2:a*(x-dx0-dx1)^2 + b*(x-dx0-dx1) + c - u2 = 0;
+
+expr0:subst(0, x, expr0);
+expr1:subst(0, x, expr1);
+expr2:subst(0, x, expr2);
+
+solution:solve([expr0, expr1, expr2], [a,b,c]);
+
+/*
+    f = a*x^^2 + b*x + c
+    dfdx = 2*a*x + b
+
+    Because we set x=0 at the point u0, then:
+
+    dfdx = b
+
+*/
+b_expr:solution[1][2];
+dfdx:rhs(b_expr);
+dfdx:fullratsimp(dfdx);
+
+/*
+    Check that this reduces to the three point backwards formula from wikipedia
+
+dfdxu:subst(h, dx0, dfdx);
+dfdxu:subst(h, dx1, dfdxu);
+dfdxu:fullratsimp(dfdxu);
+
+    It does
+*/
