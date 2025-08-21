@@ -101,6 +101,7 @@ Primitives increment_primitives(double x, double A, double dx, double dA, double
 
 Primitives f_derivative(Primitives P1, Primitives P2, Primitives dP1df, double f, double dA,
                         double A1, double A2, double dx, GasState gs, GasModel gm){
+    // TODO: This will have H in it!
     double rho = P2.rho;
     double p = P2.p;
     double v = P2.v;
@@ -168,6 +169,73 @@ Primitives f_derivative(Primitives P1, Primitives P2, Primitives dP1df, double f
     return Primitives(rho=drdf, p=dpdf, v=dvdf, u=dudf);
 }
 
+Primitives H_derivative(Primitives P1, Primitives P2, Primitives dP1dH, double f,
+         double Hdot, double dA,  double A1, double A2, double dx, GasState gs, GasModel gm){
+    double rho = P2.rho;
+    double p = P2.p;
+    double v = P2.v;
+    double u = P2.u;
+
+    double rho1 = P1.rho;
+    double p1 = P1.p;
+    double v1 = P1.v;
+    double u1 = P1.u;
+
+    gs.u = u;
+    gs.rho = rho;
+    gs.p = p;
+    gs.T = temp_from_u(gs, gm);
+
+    double diameter = sqrt(4.0*A1/PI);
+    double c = 1.0/8.0*PI*diameter*dx;
+
+    double cv = gm.dudT_const_v(gs).re;
+    double R = gm.gas_constant(gs).re;
+    double A = A2;
+
+    double dr1dH = dP1dH.rho;
+    double dv1dH = dP1dH.v;
+    double dp1dH = dP1dH.p;
+    double du1dH = dP1dH.u;
+
+    double rhs0 = A1*dr1dH*v1+A1*dv1dH*rho1;
+    double rhs1 = dr1dH*(A1*v1^^2-c*f*v1^^2)+dv1dH*(2*A1*rho1*v1-2*c*f*rho1*v1)
+                                       +(dA/2+A1)*dp1dH;
+    double rhs2 = dv1dH*(A1*rho1*v1^^2+A1*rho1*(v1^^2/2+u1)+A1*p1)
+                  +A1*dr1dH*v1*(v1^^2/2+u1)+A1*du1dH*rho1*v1+A1*dp1dH*v1+A1*dx;
+    double rhs3 = 0.0;
+
+    double drdH = ((3*R*dA+8*A*cv+2*A*R)*rho*rhs0*v^^2
+            +((4*A^^2*cv-2*A*cv*dA)*rho*rhs3+((-4*A*cv)-4*A*R)*rho*rhs1)*v
+            +(2*R*dA-4*A*R)*rho*rhs0*u+(4*A*R-2*R*dA)*rho*rhs2+(2*R*dA-4*A*R)*p*rhs0)
+            /((2*A*R*dA+4*A^^2*cv)*rho*v^^3+((2*A*R*dA-4*A^^2*R)*rho*u+(2*A*R*dA-4*A^^2*R)*p)
+                               *v);
+
+    double dvdH = -((R*dA+4*A*cv+2*A*R)*rhs0*v^^2+((4*A^^2*cv-2*A*cv*dA)*rhs3
+                                      +((-4*A*cv)-4*A*R)*rhs1)
+                                      *v+(4*A*R-2*R*dA)*rhs2)
+                /((2*A*R*dA+4*A^^2*cv)*rho*v^^2+(2*A*R*dA-4*A^^2*R)*rho*u
+                +(2*A*R*dA-4*A^^2*R)*p);
+
+    double dpdH = (R*rho*rhs0*v^^3+(2*A*cv*rho*rhs3-2*R*rho*rhs1)*v^^2
+                      +(2*R*rho*rhs0*u+2*R*rho*rhs2+2*R*p*rhs0)*v
+                      -2*R*rho*rhs1*u-2*R*p*rhs1)
+                    /((R*dA+2*A*cv)*rho*v^^2+(R*dA-2*A*R)*rho*u+(R*dA-2*A*R)*p);
+
+    double dudH = (2*A*cv*rho*rhs0*v^^4+((-2*A*cv*dA*rho*rhs3)-4*A*cv*rho*rhs1)*v^^3
+                           +(((-3*R*dA)-4*A*cv-2*A*R)*rho*rhs0*u
+                            +4*A*cv*rho*rhs2+4*A*cv*p*rhs0)
+                            *v^^2
+                           +(4*A*R*rho*rhs1*u+(4*A^^2*cv-2*A*cv*dA)*p*rhs3
+                                             -4*A*cv*p*rhs1)
+                            *v+(4*A*R-2*R*dA)*rho*rhs0*u^^2
+                           +((2*R*dA-4*A*R)*rho*rhs2+(4*A*R-2*R*dA)*p*rhs0)*u)
+                     /((2*A*R*dA+4*A^^2*cv)*rho^^2*v^^3+((2*A*R*dA-4*A^^2*R)*rho^^2*u
+                                 +(2*A*R*dA-4*A^^2*R)*p*rho)
+                                 *v);
+    return Primitives(rho=drdH, p=dpdH, v=dvdH, u=dudH);
+}
+
 
 int main(string[] args)
 {
@@ -202,7 +270,8 @@ int main(string[] args)
 
     print_state("Init", v, M, As, gs, gm);
 
-    SimData[] simderivs;
+    SimData[] fderivs;
+    SimData[] Hderivs;
     SimData[] simdata;
     double[] xs;
     size_t nreserve = to!size_t(L/(v*dt))*2;
@@ -215,10 +284,16 @@ int main(string[] args)
     Primitives P0 = Primitives(gs.rho.re, gs.p.re, v, gs.u.re);
     Primitives dPdf0 = Primitives(0.0, 0.0, 0.0, 0.0);
     Primitives dPdf;
+    Primitives dPdH0 = Primitives(0.0, 0.0, 0.0, 0.0);
+    Primitives dPdH;
 
-    simderivs~= SimData(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+
     simdata ~= SimData(P0.p, gs.T.re, P0.rho, As, P0.v, M, gamma);
     xs ~= x;
+    if (cfg.calc_derivatives) {
+        fderivs~= SimData(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+        Hderivs~= SimData(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+    }
 
     size_t iter = 0; 
     bool last_step = false;
@@ -240,6 +315,7 @@ int main(string[] args)
         Primitives P1 = increment_primitives(x, A, dx, dA, Hdot, f, P0, gm, gs);
         if (cfg.calc_derivatives) {
             dPdf = f_derivative(P0, P1, dPdf0, f, dA, A, A1, dx, gs2, gm);
+            dPdH = H_derivative(P0, P1, dPdH0, f, Hdot, dA, A, A1, dx, gs2, gm);
         }
 
         // Add the increments
@@ -257,8 +333,11 @@ int main(string[] args)
         P0 = P1;
 
         if (cfg.calc_derivatives){
-            simderivs ~= SimData(dPdf.p, 0.0, dPdf.rho, dA/dx, dPdf.v, 0.0, 0.0);
+            // Custom constructor that autodiffs the T and M maybe?
+            fderivs ~= SimData(dPdf.p, 0.0, dPdf.rho, 0.0, dPdf.v, 0.0, 0.0);
+            Hderivs ~= SimData(dPdH.p, 0.0, dPdH.rho, 0.0, dPdH.v, 0.0, 0.0);
             dPdf0 = dPdf;
+            dPdH0 = dPdH;
         }
 
         iter += 1;
@@ -276,9 +355,13 @@ int main(string[] args)
     write_solution_to_file(xs, simdata, output_file_name);
 
     if (cfg.calc_derivatives) {
-        string derivs_file_name = format("derivs-%s.bin", config_file_name.chomp(".yaml"));
+        string derivs_file_name = format("fderivs-%s.bin", config_file_name.chomp(".yaml"));
         writefln("Writing derivs to file %s...", derivs_file_name);
-        write_solution_to_file(xs, simderivs, derivs_file_name);
+        write_solution_to_file(xs, fderivs, derivs_file_name);
+
+        derivs_file_name = format("Hderivs-%s.bin", config_file_name.chomp(".yaml"));
+        writefln("Writing derivs to file %s...", derivs_file_name);
+        write_solution_to_file(xs, Hderivs, derivs_file_name);
     }
 
     return exitFlag;

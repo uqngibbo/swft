@@ -10,10 +10,8 @@ rs: 0.05
 rf: 0.05
 dt: 5e-7
 f: 0.0
-Hdot: 10000000.0
+Hdot: 10010000.0
 T0: 361.0
 p0: 968.0
 v0: 3623.0
 Y0: {'air': 1.0}
-
-calc_derivatives: true

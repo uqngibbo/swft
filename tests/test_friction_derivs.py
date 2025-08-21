@@ -32,7 +32,7 @@ def read_derivs():
     keys = ['p', 'v', 'rho']
     dUdf_fd = {key:(data1[key]-data0[key])/(cfg1['f']-cfg0['f']) for  key in keys}
 
-    dUdf = read_solution_file("derivs-{}.bin".format(name0))
+    dUdf = read_solution_file("fderivs-{}.bin".format(name0))
     return data0, dUdf_fd, dUdf
 
 def get_L2_norms(dUdf_fd, dUdf):
@@ -61,7 +61,7 @@ def test_output():
     assert isclose(L2['v'], 0.45423, 1e-4)
 
 def test_cleanup():
-    cmd = "rm friction.bin perturb_friction.bin derivs-friction.bin"
+    cmd = "rm friction.bin perturb_friction.bin fderivs-friction.bin"
     proc = subprocess.run(cmd.split(), capture_output=True, text=True)
     assert proc.returncode == 0, "Failed cmd: "+cmd
 

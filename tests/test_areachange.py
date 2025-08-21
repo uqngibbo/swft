@@ -1,5 +1,5 @@
 """
-Test code for edict, currently conduction only.
+Test code for swft, checking basic Q1D area change
 
 @author: Nick
 """

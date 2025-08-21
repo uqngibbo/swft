@@ -40,7 +40,7 @@ def objective(x):
     assert proc.returncode == 0, "Failed cmd: "+cmd
 
     current = read_solution_file('temp.bin')
-    derivs = read_solution_file("derivs-temp.bin")
+    derivs = read_solution_file("fderivs-temp.bin")
 
     n = current['v'].size
     interp = interp1d(target['x'], target['v'])

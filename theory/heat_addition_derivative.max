@@ -1,0 +1,50 @@
+/* ----------------------------------------------------------
+Maxima File to compute total derivative expressions for scrf
+
+@author: Nick Gibbons
+-----------------------------------------------------------*/
+
+mass:rho*v*A - rho1*v1*A1;
+mom:rho*v*v*A + p*A - rho1*v1*v1*A1 - p1*A1 -(p+p1)/2*dA + c*f*rho1*v1*v1;
+nrg:rho*v*A*(u+v*v/2) + p*A*v - rho1*v1*A1*(u1+v1*v1/2) - p1*A1*v1 - H*A1*dx;
+eos:p-rho*R*u/cv;
+
+dRdU2:matrix([diff(mass,rho), diff(mass,v), diff(mass,p), diff(mass,u)],
+             [diff(mom, rho), diff(mom, v), diff(mom, p), diff(mom, u)],
+             [diff(nrg, rho), diff(nrg, v), diff(nrg, p), diff(nrg, u)],
+             [diff(eos, rho), diff(eos, v), diff(eos, p), diff(eos, u)]);
+
+dRdU1:matrix([diff(mass,rho1), diff(mass,v1), diff(mass,p1), diff(mass,u1)],
+             [diff(mom, rho1), diff(mom, v1), diff(mom, p1), diff(mom, u1)],
+             [diff(nrg, rho1), diff(nrg, v1), diff(nrg, p1), diff(nrg, u1)],
+             [diff(eos, rho1), diff(eos, v1), diff(eos, p1), diff(eos, u1)]);
+
+dRdH:matrix([diff(mass, H)], [diff(mom,H)], [diff(nrg, H)], [diff(eos, H)]);
+dU1dH:matrix([dr1dH], [dv1dH], [dp1dH], [du1dH]);
+
+display2d:false$
+rhs_a:-dRdU1.dU1dH - dRdH;
+
+rhs:matrix([rhs0], [rhs1], [rhs2], [rhs3]);
+
+
+Jinv:invert(dRdU2)$
+
+dUdH:Jinv.rhs$
+
+
+drdH:dUdH[1,1]$
+drdH:fullratsimp(drdH);
+print("")$
+
+dvdH:dUdH[2,1]$
+dvdH:fullratsimp(dvdH);
+print("")$
+
+dpdH:dUdH[3,1]$
+dpdH:fullratsimp(dpdH);
+print("")$
+
+dudH:dUdH[4,1]$
+dudH:fullratsimp(dudH);
+print("")$
