@@ -101,7 +101,9 @@ Primitives increment_primitives(double x, double A, double dx, double dA, double
 
 Primitives f_derivative(Primitives P1, Primitives P2, Primitives dP1df, double f, double dA,
                         double A1, double A2, double dx, GasState gs, GasModel gm){
-    // TODO: This will have H in it!
+/*
+    Note that H does not appear in these expressions, even when included in R
+*/
     double rho = P2.rho;
     double p = P2.p;
     double v = P2.v;
