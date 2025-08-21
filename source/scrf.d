@@ -4,11 +4,12 @@
     References:
 
     Todo List:
-     - Hdot derivations
      - Python bindings
      - Thermally Perfect Gas
      - Reactions
-     - Wrapper code for optimisation
+     - Multiple f and H values
+     - Actually try the scramjet flow
+     - Nonsymbolic derivatives that are a bit less messed up.
 
     @author: Nick Gibbons
 */
@@ -53,8 +54,11 @@ void print_state(string name, double v, double M, double A, ref GasState gs, Gas
 }
 
 double temp_from_u(GasState gs, GasModel gm){
-    double cv = gm.dudT_const_v(gs).re;
-    return gs.u.re/cv;
+/*
+    This should copy the gasstate, so it won't affect the outer scope.
+*/
+    gm.update_thermo_from_rhop(gs);
+    return gs.T.re;
 }
 
 Primitives increment_primitives(double x, double A, double dx, double dA, double Hdot, double f, ref Primitives P0, ref GasModel gm, ref GasState gs){
@@ -260,6 +264,8 @@ int main(string[] args)
 
     double v = cfg.v0;
     double M = v/gs.a.re;
+    double cv = gm.dudT_const_v(gs).re;
+    double R = gm.gas_constant(gs).re;
 
     double x = 0.0;
     double L = cfg.L;
@@ -328,6 +334,8 @@ int main(string[] args)
         gs.T = temp_from_u(gs, gm);
         gm.update_sound_speed(gs);
         gamma = gm.gamma(gs).re;
+        cv = gm.dudT_const_v(gs).re;
+        R = gm.gas_constant(gs).re;
 
         M = P1.v/gs.a.re;
         simdata ~= SimData(P1.p, gs.T.re, P1.rho, A, P1.v, M, gamma);
@@ -336,8 +344,14 @@ int main(string[] args)
 
         if (cfg.calc_derivatives){
             // Custom constructor that autodiffs the T and M maybe?
-            fderivs ~= SimData(dPdf.p, 0.0, dPdf.rho, 0.0, dPdf.v, 0.0, 0.0);
-            Hderivs ~= SimData(dPdH.p, 0.0, dPdH.rho, 0.0, dPdH.v, 0.0, 0.0);
+            double dTdf = dPdf.u/cv;
+            double dadf = sqrt(gamma*R/gs.T.re)*dTdf;
+            double dMdf = (gs.a.re*dPdf.v - v*dadf)/gs.a.re/gs.a.re;
+            fderivs ~= SimData(dPdf.p, dTdf, dPdf.rho, 0.0, dPdf.v, dMdf, 0.0);
+            double dTdH = dPdH.u/cv;
+            double dadH = sqrt(gamma*R/gs.T.re)*dTdH;
+            double dMdH = (gs.a.re*dPdH.v - v*dadH)/gs.a.re/gs.a.re;
+            Hderivs ~= SimData(dPdH.p, dTdH, dPdH.rho, 0.0, dPdH.v, dMdH, 0.0);
             dPdf0 = dPdf;
             dPdH0 = dPdH;
         }

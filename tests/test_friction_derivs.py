@@ -56,9 +56,9 @@ def test_output():
     data0, dUdf_fd, dUdf = read_derivs()
     L2 = get_L2_norms(dUdf_fd, dUdf)
 
-    assert isclose(L2['rho'], 6.1493e-06, 1e-4)
-    assert isclose(L2['p'], 14.398, 1e-4)
-    assert isclose(L2['v'], 0.45423, 1e-4)
+    assert isclose(L2['rho'], 6.1801e-6, 1e-4)
+    assert isclose(L2['p'], 14.782, 1e-4)
+    assert isclose(L2['v'], 0.46555, 1e-4)
 
 def test_cleanup():
     cmd = "rm friction.bin perturb_friction.bin fderivs-friction.bin"
