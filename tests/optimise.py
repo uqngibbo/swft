@@ -82,7 +82,7 @@ def jacobian(x):
     Hderivs_v = Hderivs['v']
     JH = 2.0/n*((current_v-interped_v)*Hderivs_v*H_ref).sum()
 
-    print("Called jac with f={} H={} and output={},{}".format(f/f_ref,H/H_ref,Jf,JH))
+    print("       jac with f={} H={} and output={},{}".format(f/f_ref,H/H_ref,Jf,JH))
     return array([Jf, JH])
 
 target = read_solution_file('combined.bin')
@@ -99,7 +99,7 @@ target = read_solution_file('combined.bin')
 #    print("deriv {}".format(deriv))
 #    print("jac   {}".format(jac))
 
-f = 0.0
+f = 1.0
 H = 7.0
 x0 = array([f, H])
 print("Starting with f={:5.5f} H={:5.5e}".format(f, H))
