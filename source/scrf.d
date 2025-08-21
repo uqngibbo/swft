@@ -57,6 +57,8 @@ double temp_from_u(GasState gs, GasModel gm){
 /*
     This should copy the gasstate, so it won't affect the outer scope.
 */
+    // Technically we use rho u in the increment calculation. Should that
+    // be reflected here? Maybe it affects the error very slightly.
     gm.update_thermo_from_rhop(gs);
     return gs.T.re;
 }
@@ -345,11 +347,11 @@ int main(string[] args)
         if (cfg.calc_derivatives){
             // Custom constructor that autodiffs the T and M maybe?
             double dTdf = dPdf.u/cv;
-            double dadf = sqrt(gamma*R/gs.T.re)*dTdf;
+            double dadf = 0.5*sqrt(gamma*R/gs.T.re)*dTdf;
             double dMdf = (gs.a.re*dPdf.v - v*dadf)/gs.a.re/gs.a.re;
             fderivs ~= SimData(dPdf.p, dTdf, dPdf.rho, 0.0, dPdf.v, dMdf, 0.0);
             double dTdH = dPdH.u/cv;
-            double dadH = sqrt(gamma*R/gs.T.re)*dTdH;
+            double dadH = 0.5*sqrt(gamma*R/gs.T.re)*dTdH;
             double dMdH = (gs.a.re*dPdH.v - v*dadH)/gs.a.re/gs.a.re;
             Hderivs ~= SimData(dPdH.p, dTdH, dPdH.rho, 0.0, dPdH.v, dMdH, 0.0);
             dPdf0 = dPdf;

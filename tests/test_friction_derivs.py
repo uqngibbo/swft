@@ -8,7 +8,6 @@ from numpy import array, zeros, interp, frombuffer, array, concatenate, log, lin
 import struct
 from io import BytesIO, BufferedWriter
 import matplotlib.pyplot as plt
-from scipy.optimize import brentq
 import subprocess
 from test_friction import read_solution_file
 import yaml
@@ -29,7 +28,7 @@ def read_derivs():
     cfg1  = read_cfg("{}.yaml".format(name1))
     data1= read_solution_file("{}.bin".format(name1))
 
-    keys = ['p', 'v', 'rho']
+    keys = ['p', 'v', 'rho', 'M', 'T']
     dUdf_fd = {key:(data1[key]-data0[key])/(cfg1['f']-cfg0['f']) for  key in keys}
 
     dUdf = read_solution_file("fderivs-{}.bin".format(name0))
@@ -74,8 +73,8 @@ if __name__=='__main__':
     print("p   L2 norm: ", L2['p'])
     print("v   L2 norm: ", L2['v'])
 
-    fig = plt.figure(figsize=(14,4))
-    axes = fig.subplots(1,3)
+    fig = plt.figure(figsize=(16,4))
+    axes = fig.subplots(1,5)
 
     axes[0].plot(data0['x'], dUdf_fd['rho'], linestyle='--', linewidth=2.0, color='red')
     axes[0].plot(data0['x'], dUdf['rho'], linestyle='-', linewidth=1.0, color='maroon')
@@ -94,6 +93,18 @@ if __name__=='__main__':
     axes[2].set_xlabel('x (m)')
     axes[2].set_ylabel('dvdf')
     axes[2].grid()
+
+    axes[3].plot(data0['x'], dUdf_fd['M'], linestyle='--', linewidth=2.0, color='grey')
+    axes[3].plot(data0['x'], dUdf['M'], linestyle='-', linewidth=1.0, color='black')
+    axes[3].set_xlabel('x (m)')
+    axes[3].set_ylabel('dMdf')
+    axes[3].grid()
+
+    axes[4].plot(data0['x'], dUdf_fd['T'], linestyle='--', linewidth=2.0, color='orange')
+    axes[4].plot(data0['x'], dUdf['T'], linestyle='-', linewidth=1.0, color='red')
+    axes[4].set_xlabel('x (m)')
+    axes[4].set_ylabel('dTdf')
+    axes[4].grid()
 
     fig.suptitle("Method of Total Derivatives Check")
     plt.tight_layout()
