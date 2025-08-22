@@ -10,7 +10,7 @@ PLATFORM ?= linux
 
 PROGRAMS := scrf
 
-SCRF_FILES := io.d
+SCRF_FILES := io.d derivatives.d
 
 UTIL_DIR := $(DGD_REPO)/src/util
 include $(UTIL_DIR)/util_files.mk
