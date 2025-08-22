@@ -6,5 +6,5 @@ test:
 	PYTHONDONTWRITEBYTECODE=1 $(PYTEST) -v
 
 clean:
-	- rm *.bin temp.yaml
+	- rm -rf *.bin temp.yaml
 
