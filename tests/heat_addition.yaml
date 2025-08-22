@@ -5,9 +5,8 @@
 gas_file_name: "gm.lua"           # GDTk gas model file
 reaction_file_name: "rr.lua"      # GDTk reactions model file
 
-L: 1.0
-rs: 0.05
-rf: 0.05
+xi: [0.0, 1.0]
+Ai: [0.007853981633974483, 0.007853981633974483]
 dt: 5e-7
 f: 0.0
 Hdot: 10000000.0

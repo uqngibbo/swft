@@ -78,11 +78,11 @@ def test_runscrf():
 def test_output():
     data = read_solution_file('area_change.bin')
 
-    assert isclose(data['M'][-1], 12.743, 1e-4)
+    assert isclose(data['M'][-1], 12.7455, 1e-4)
     assert isclose(data['v'][-1], 3665.695, 1e-4)
-    assert isclose(data['rho'][-1], 2.29927e-3, 1e-4)
-    assert isclose(data['p'][-1], 135.891, 1e-4)
-    assert isclose(data['T'][-1], 205.855, 1e-4)
+    assert isclose(data['rho'][-1], 2.29823e-3, 1e-4)
+    assert isclose(data['p'][-1], 135.786, 1e-4)
+    assert isclose(data['T'][-1], 205.789, 1e-4)
 
 def test_cleanup():
     cmd = "rm area_change.bin"

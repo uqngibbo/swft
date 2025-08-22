@@ -33,9 +33,9 @@ import nm.bbla;
 import nm.number;
 import nm.complex;
 
-void progress_bar(double x, double L){
-    double percent = x/L*100.0;
-    int filled = to!int(x/L*60);
+void progress_bar(double x, double x0, double xf){
+    double percent = (x-x0)/(xf-x0)*100.0;
+    int filled = to!int((x-x0)/(xf-x0)*60);
     write("\r[");
     foreach(i; 0 .. filled) write('-');
     foreach(i; filled .. 60) write(' ');
@@ -53,6 +53,38 @@ void print_state(string name, double v, double M, double A, ref GasState gs, Gas
     }
     writeln("]");
 }
+
+double interpolate_area(double[] xi, double[] Ai, double x){
+/*
+    Non uniform linear interpolation using a binary search.
+
+    @author: Nick Gibbons
+*/
+    size_t n = xi.length;
+
+    size_t l = 0;
+    size_t m = n/2;
+    size_t u = n-1;
+    double xl = xi[l]; double xm = xi[m]; double xu = xi[u];
+
+    while (true) {
+        if ((u-l)==1) break;
+        if (x>xm) {
+            l = m;
+        } else if (x<=m) {
+            u = m;
+        } else {
+            throw new Error("Bad binary search logic sorry.");
+        }
+        m = (l+u)/2;
+        xl = xi[l]; xm = xi[m]; xu = xi[u];
+    }
+
+    double dAdx = (Ai[u]-Ai[l])/(xi[u]-xi[l]);
+    double A = dAdx*(x-xi[l]) + Ai[l];
+    return A;
+}
+
 
 
 Primitives increment_primitives(double x, double A, double dx, double dA, double Hdot, double f, ref Primitives P0, ref GasModel gm, ref GasState gs){
@@ -121,12 +153,10 @@ int main(string[] args)
     double cv = gm.dudT_const_v(gs).re;
     double R = gm.gas_constant(gs).re;
 
-    double x = 0.0;
-    double L = cfg.L;
-    double rs = cfg.rs;
-    double rf = cfg.rf;
+    double x0 = cfg.xi[0];
+    double xf = cfg.xi[$-1];
     double dt = cfg.dt;
-    double As = PI*rs*rs;
+    double As = interpolate_area(cfg.xi, cfg.Ai, x0);
     double f = cfg.f;
     double Hdot = cfg.Hdot; // Volumetric heat addition rate W/m3
 
@@ -136,7 +166,7 @@ int main(string[] args)
     SimData[] Hderivs;
     SimData[] simdata;
     double[] xs;
-    size_t nreserve = to!size_t(L/(v*dt))*2;
+    size_t nreserve = to!size_t((xf-x0)/(v*dt))*2;
     writefln("Timestep %e, Reserving space for %d simdatas", dt, nreserve);
     simdata.reserve(nreserve);
     xs.reserve(nreserve);
@@ -151,7 +181,7 @@ int main(string[] args)
 
 
     simdata ~= SimData(P0.p, gs.T.re, P0.rho, As, P0.v, M, gamma);
-    xs ~= x;
+    xs ~= x0;
     if (cfg.calc_derivatives) {
         fderivs~= SimData(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
         Hderivs~= SimData(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
@@ -159,19 +189,18 @@ int main(string[] args)
 
     size_t iter = 0; 
     bool last_step = false;
+    double x = x0;
     writeln("Running...");
-    while (x<=L) {
-        double r = (x-0.0)/L*(rf-rs) + rs;
-        double A = PI*r*r;
+    while (x<=xf) {
+        double A = interpolate_area(cfg.xi, cfg.Ai, x);
 
         double dx = v*dt;
-        if (x+dx>=L) {
+        if (x+dx>=xf) {
             last_step = true;
-            dx = L-x;
+            dx = xf-x;
         }
         double x1 = x + dx;
-        double r1 = (x1-0.0)/L*(rf-rs) + rs;
-        double A1 = PI*r1*r1;
+        double A1 = interpolate_area(cfg.xi, cfg.Ai, x1);
         double dA = A1-A;
 
         Primitives P1 = increment_primitives(x, A, dx, dA, Hdot, f, P0, gm, gs);
@@ -198,6 +227,8 @@ int main(string[] args)
 
         if (cfg.calc_derivatives){
             // Custom constructor that autodiffs the T and M maybe?
+            // TODO: Get this outta here.... I think the derivatives deserve their own
+            // datastructure.
             double dTdf = dPdf.u/cv;
             double dadf = 0.5*sqrt(gamma*R/gs.T.re)*dTdf;
             double dMdf = (gs.a.re*dPdf.v - v*dadf)/gs.a.re/gs.a.re;
@@ -212,7 +243,7 @@ int main(string[] args)
 
         iter += 1;
         if ((iter%20==0)||(last_step)){
-            progress_bar(x, L);
+            progress_bar(x, x0, xf);
         }
         if (last_step) break;
     }

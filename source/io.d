@@ -15,9 +15,9 @@ import nm.number;
 struct Config {
     string gas_file_name;
     string reaction_file_name;
-    double L;
-    double rs;
-    double rf;
+
+    double[] xi;
+    double[] Ai;
     double dt;
     double f;
     double Hdot;
@@ -33,9 +33,9 @@ struct Config {
         gas_file_name      = data["gas_file_name"].as!string;
         reaction_file_name = data["reaction_file_name"].as!string;
 
-        L    = to!double(data["L"].as!string);
-        rs   = to!double(data["rs"].as!string);
-        rf   = to!double(data["rf"].as!string);
+        foreach(string val; data["xi"]) { xi ~= to!double(val); }
+        foreach(string val; data["Ai"]) { Ai ~= to!double(val); }
+
         dt   = to!double(data["dt"].as!string);
         f    = to!double(data["f"].as!string);
         Hdot = to!double(data["Hdot"].as!string);
