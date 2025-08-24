@@ -18,11 +18,11 @@ H_ref = 1e7
 TEMPLATE = """
 gas_file_name: "gm.lua"
 reaction_file_name: "rr.lua"
-L: 1.0
-rs: 0.05
-rf: 0.05
+xi: [0.0, 1.0]
+Ai: [0.007853981633974483, 0.007853981633974483]
+xf: [0.0, 1.0]
+f:  [{}, {}]
 dt: 5e-7
-f: {}
 Hdot: {}
 T0: 361.0
 p0: 968.0
@@ -35,7 +35,7 @@ def objective(x):
     f = x[0]*f_ref
     H = x[1]*H_ref
     with open('temp.yaml', 'w') as fp:
-        fp.write(TEMPLATE.format(f, H))
+        fp.write(TEMPLATE.format(f, f, H))
 
     cmd = "scrf temp.yaml"
     proc = subprocess.run(cmd.split(), capture_output=True, text=True)
@@ -59,7 +59,7 @@ def jacobian(x):
     f = x[0]*f_ref
     H = x[1]*H_ref
     with open('temp.yaml', 'w') as fp:
-        fp.write(TEMPLATE.format(f, H))
+        fp.write(TEMPLATE.format(f, f, H))
 
     cmd = "scrf temp.yaml"
     proc = subprocess.run(cmd.split(), capture_output=True, text=True)
@@ -76,6 +76,7 @@ def jacobian(x):
 
     fderivs = read_solution_file("fderivs-temp.bin")
     fderivs_v = fderivs['v']
+    df
     Jf = 2.0/n*((current_v-interped_v)*fderivs_v*f_ref).sum()
 
     Hderivs = read_solution_file("Hderivs-temp.bin")
@@ -99,7 +100,7 @@ target = read_solution_file('combined.bin')
 #    print("deriv {}".format(deriv))
 #    print("jac   {}".format(jac))
 
-f = 1.0
+f = 5.0
 H = 7.0
 x0 = array([f, H])
 print("Starting with f={:5.5f} H={:5.5e}".format(f, H))
