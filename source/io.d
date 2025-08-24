@@ -18,8 +18,9 @@ struct Config {
 
     double[] xi;
     double[] Ai;
+    double[] xf;
+    double[] f;
     double dt;
-    double f;
     double Hdot;
     double T0;
     double p0;
@@ -35,9 +36,10 @@ struct Config {
 
         foreach(string val; data["xi"]) { xi ~= to!double(val); }
         foreach(string val; data["Ai"]) { Ai ~= to!double(val); }
+        foreach(string val; data["xf"]) { xf ~= to!double(val); }
+        foreach(string val; data["f"])  { f  ~= to!double(val); }
 
         dt   = to!double(data["dt"].as!string);
-        f    = to!double(data["f"].as!string);
         Hdot = to!double(data["Hdot"].as!string);
         T0   = to!double(data["T0"].as!string);
         p0   = to!double(data["p0"].as!string);
@@ -53,6 +55,11 @@ struct Config {
         if ("calc_derivatives" in data) {
             calc_derivatives = to!bool(data["calc_derivatives"].as!string);
         }
+
+        if (dt<=0.0) throw new Error("timestep size dt is non-positive");
+        if (xi.length!=Ai.length) throw new Error("xi.length does not match Ai.length");
+        if (xf.length!=f.length)  throw new Error("xf.length does not match f.length");
+
         return;
     }
 }
@@ -84,10 +91,7 @@ struct Primitives {
 // Maybe there should be another one called Primitives or something??
 struct SimData {
     double p,T,rho,A,v,M,gamma;
-
-
 }
-
 
 
 void write_solution_to_file(double[] xs, SimData[] simdata, string filename){

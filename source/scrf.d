@@ -54,7 +54,7 @@ void print_state(string name, double v, double M, double A, ref GasState gs, Gas
     writeln("]");
 }
 
-double interpolate_area(double[] xi, double[] Ai, double x){
+double interpolate(double[] xi, double[] Ai, double x){
 /*
     Non uniform linear interpolation using a binary search.
 
@@ -66,6 +66,8 @@ double interpolate_area(double[] xi, double[] Ai, double x){
     size_t m = n/2;
     size_t u = n-1;
     double xl = xi[l]; double xm = xi[m]; double xu = xi[u];
+    if (x<=xi[0]) return Ai[0];
+    if (x>=xi[$-1]) return Ai[$-1];
 
     while (true) {
         if ((u-l)==1) break;
@@ -156,16 +158,16 @@ int main(string[] args)
     double x0 = cfg.xi[0];
     double xf = cfg.xi[$-1];
     double dt = cfg.dt;
-    double As = interpolate_area(cfg.xi, cfg.Ai, x0);
-    double f = cfg.f;
+    double As = interpolate(cfg.xi, cfg.Ai, x0);
     double Hdot = cfg.Hdot; // Volumetric heat addition rate W/m3
 
     print_state("Init", v, M, As, gs, gm);
 
     SimData[] fderivs;
     SimData[] Hderivs;
-    SimData[] simdata;
+
     double[] xs;
+    SimData[] simdata;
     size_t nreserve = to!size_t((xf-x0)/(v*dt))*2;
     writefln("Timestep %e, Reserving space for %d simdatas", dt, nreserve);
     simdata.reserve(nreserve);
@@ -192,7 +194,8 @@ int main(string[] args)
     double x = x0;
     writeln("Running...");
     while (x<=xf) {
-        double A = interpolate_area(cfg.xi, cfg.Ai, x);
+        double A = interpolate(cfg.xi, cfg.Ai, x);
+        double f = interpolate(cfg.xf, cfg.f, x);
 
         double dx = v*dt;
         if (x+dx>=xf) {
@@ -200,7 +203,7 @@ int main(string[] args)
             dx = xf-x;
         }
         double x1 = x + dx;
-        double A1 = interpolate_area(cfg.xi, cfg.Ai, x1);
+        double A1 = interpolate(cfg.xi, cfg.Ai, x1);
         double dA = A1-A;
 
         Primitives P1 = increment_primitives(x, A, dx, dA, Hdot, f, P0, gm, gs);

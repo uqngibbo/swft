@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 import subprocess
 from test_friction import read_solution_file
 import yaml
+from scipy.interpolate import interp1d
 
 def read_cfg(filename):
     with open(filename) as fp:
@@ -23,13 +24,17 @@ def read_derivs():
     name0 = 'friction'
     cfg0  = read_cfg("{}.yaml".format(name0))
     data0= read_solution_file("{}.bin".format(name0))
+    fi0= interp1d(cfg0['xf'], cfg0['f'])
+    f0 = fi0(data0['x'])
 
     name1 = 'perturb_friction'
     cfg1  = read_cfg("{}.yaml".format(name1))
     data1= read_solution_file("{}.bin".format(name1))
+    fi1= interp1d(cfg1['xf'], cfg1['f'])
+    f1 = fi1(data1['x'])
 
     keys = ['p', 'v', 'rho', 'M', 'T']
-    dUdf_fd = {key:(data1[key]-data0[key])/(cfg1['f']-cfg0['f']) for  key in keys}
+    dUdf_fd = {key:(data1[key]-data0[key])/(f1-f0) for  key in keys}
 
     dUdf = read_solution_file("fderivs-{}.bin".format(name0))
     return data0, dUdf_fd, dUdf
