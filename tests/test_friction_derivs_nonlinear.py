@@ -13,6 +13,22 @@ from test_friction import read_solution_file
 import yaml
 from scipy.interpolate import interp1d
 
+TEMPLATE = """
+gas_file_name: "gm.lua"
+reaction_file_name: "rr.lua"
+xi: [0.0, 1.0]
+Ai: [0.007853981633974483, 0.007853981633974483]
+xf: {}
+f:  {}
+dt: 5e-7
+Hdot: 0.0
+T0: 361.0
+p0: 968.0
+v0: 3623.0
+Y0: {{"air": 1.0}}
+calc_derivatives: {}
+"""
+
 def read_cfg(filename):
     with open(filename) as fp:
         f = yaml.safe_load(fp)
@@ -21,13 +37,13 @@ def read_cfg(filename):
     return cfg
 
 def read_derivs():
-    name0 = 'friction'
+    name0 = 'temp'
     cfg0  = read_cfg("{}.yaml".format(name0))
     data0= read_solution_file("{}.bin".format(name0))
     fi0= interp1d(cfg0['xf'], cfg0['f'])
     f0 = fi0(data0['x'])
 
-    name1 = 'perturb_friction'
+    name1 = 'temp_perturbed'
     cfg1  = read_cfg("{}.yaml".format(name1))
     data1= read_solution_file("{}.bin".format(name1))
     fi1= interp1d(cfg1['xf'], cfg1['f'])
@@ -48,11 +64,20 @@ def get_L2_norms(dUdf_fd, dUdf):
     return L2
 
 def test_runscrf():
-    cmd = "scrf friction.yaml"
+    xf= [0.0, 1.0]
+    f = [0.005, 0.002]
+    f2= [0.005001, 0.002001]
+    with open('temp.yaml', 'w') as fp:
+        fp.write(TEMPLATE.format(xf, f, "true"))
+
+    cmd = "scrf temp.yaml"
     proc = subprocess.run(cmd.split(), capture_output=True, text=True)
     assert proc.returncode == 0, "Failed cmd: "+cmd
 
-    cmd = "scrf perturb_friction.yaml"
+    with open('temp_perturbed.yaml', 'w') as fp:
+        fp.write(TEMPLATE.format(xf, f2, "false"))
+
+    cmd = "scrf temp_perturbed.yaml"
     proc = subprocess.run(cmd.split(), capture_output=True, text=True)
     assert proc.returncode == 0, "Failed cmd: "+cmd
 
@@ -60,17 +85,34 @@ def test_output():
     data0, dUdf_fd, dUdf = read_derivs()
     L2 = get_L2_norms(dUdf_fd, dUdf)
 
-    assert isclose(L2['rho'], 6.1801e-6, 1e-4)
-    assert isclose(L2['p'], 14.782, 1e-4)
-    assert isclose(L2['v'], 0.46555, 1e-4)
+    assert isclose(L2['rho'], 4.6954e-6, 1e-4)
+    assert isclose(L2['p'], 11.184, 1e-4)
+    assert isclose(L2['v'], 0.35706, 1e-4)
 
 def test_cleanup():
-    cmd = "rm friction.bin perturb_friction.bin fderivs-friction.bin Hderivs-friction.bin"
+    cmd = "rm temp.bin temp_perturbed.bin Hderivs-temp.bin fderivs-temp.bin"
     proc = subprocess.run(cmd.split(), capture_output=True, text=True)
     assert proc.returncode == 0, "Failed cmd: "+cmd
 
 
 if __name__=='__main__':
+    xf= [0.0, 1.0]
+    f = [0.005, 0.002]
+    f2= [0.005001, 0.002001]
+    with open('temp.yaml', 'w') as fp:
+        fp.write(TEMPLATE.format(xf, f, "true"))
+
+    cmd = "scrf temp.yaml"
+    proc = subprocess.run(cmd.split(), capture_output=True, text=True)
+    assert proc.returncode == 0, "Failed cmd: "+cmd
+
+    with open('temp_perturbed.yaml', 'w') as fp:
+        fp.write(TEMPLATE.format(xf, f2, "false"))
+
+    cmd = "scrf temp_perturbed.yaml"
+    proc = subprocess.run(cmd.split(), capture_output=True, text=True)
+    assert proc.returncode == 0, "Failed cmd: "+cmd
+
     data0, dUdf_fd, dUdf = read_derivs()
 
     L2 = get_L2_norms(dUdf_fd, dUdf)
