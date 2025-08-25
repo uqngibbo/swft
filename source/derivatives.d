@@ -28,6 +28,92 @@ double temp_from_u(GasState gs, GasModel gm){
     return gs.T.re;
 }
 
+void f_derivative_nonuniform(Primitives P0, Primitives P1, ref Primitives[] dP0dfj,
+                             double f, double dA, ref Primitives[] dP1dfj,
+                             double A1, double A2, double dx, GasState gs, GasModel gm){
+
+    double rho = P1.rho;
+    double p = P1.p;
+    double v = P1.v;
+    double u = P1.u;
+
+    double rho0 = P0.rho;
+    double p0 = P0.p;
+    double v0 = P0.v;
+    double u0 = P0.u;
+
+    gs.u = u;
+    gs.rho = rho;
+    gs.p = p;
+    gs.T = temp_from_u(gs, gm);
+
+    double diameter = sqrt(4.0*A1/PI);
+    double c = 1.0/8.0*PI*diameter*dx;
+
+    double cv = gm.dudT_const_v(gs).re;
+    double R = gm.gas_constant(gs).re;
+    double A = A2;
+
+    
+    size_t nj = dP0dfj.length;
+    for(j; 0 .. nj){
+        // Oh God. Yeah.
+		double dr0dfj= dP0dfj[j].rho;
+		double dv0dfj= dP0dfj[j].v;
+		double dp0dfj= dP0dfj[j].p;
+		double du0dfj= dP0dfj[j].u;
+
+		double rhs0 = A0*dr0dfj*v0+A0*dv0dfj*rho0;
+		double rhs1 = -((2*c*dr0dfj*f-2*A0*dr0dfj)*v0^^2+(4*c*dv0dfj*f-4*A0*dv0dfj)*rho0*v0
+										  +((-dA)-2*A0)*dp0dfj)/2;
+		double rhs2 = (A0*dr0dfj*v0^^3+3*A0*dv0dfj*rho0*v0^^2;
+						+(2*A0*dr0dfj*u0+2*A0*du0dfj*rho0+2*A0*dp0dfj)*v0
+						+2*A0*dv0dfj*rho0*u0+2*A0*dv0dfj*p0)/2;
+		double rhs3 = 0.0;
+
+        double dr1dfj = ((3*R*dA+8*A*cv+2*A*R)*rho*rhs0*v^^2
+                +((4*A^^2*cv-2*A*cv*dA)*rho*rhs3+((-4*A*cv)-4*A*R)*rho*rhs1)*v
+                +(2*R*dA-4*A*R)*rho*rhs0*u+(4*A*R-2*R*dA)*rho*rhs2+(2*R*dA-4*A*R)*p*rhs0)
+                /((2*A*R*dA+4*A^^2*cv)*rho*v^^3+((2*A*R*dA-4*A^^2*R)*rho*u+(2*A*R*dA-4*A^^2*R)*p)
+                                                *v);
+
+        double dv1dfj = -((R*dA+4*A*cv+2*A*R)*rhs0*v^^2+((4*A^^2*cv-2*A*cv*dA)*rhs3
+                                      +((-4*A*cv)-4*A*R)*rhs1)
+                                      *v+(4*A*R-2*R*dA)*rhs2)
+			 /((2*A*R*dA+4*A^^2*cv)*rho*v^^2+(2*A*R*dA-4*A^^2*R)*rho*u+(2*A*R*dA-4*A^^2*R)*p);
+
+        double dp1dfj = (R*rho*rhs0*v^^3+(2*A*cv*rho*rhs3-2*R*rho*rhs1)*v^^2
+                      +(2*R*rho*rhs0*u+2*R*rho*rhs2+2*R*p*rhs0)*v
+                      -2*R*rho*rhs1*u-2*R*p*rhs1)
+                    /((R*dA+2*A*cv)*rho*v^^2+(R*dA-2*A*R)*rho*u+(R*dA-2*A*R)*p);
+
+        double du1dfj = (2*A*cv*rho*rhs0*v^^4+((-2*A*cv*dA*rho*rhs3)-4*A*cv*rho*rhs1)*v^^3
+                           +(((-3*R*dA)-4*A*cv-2*A*R)*rho*rhs0*u
+                            +4*A*cv*rho*rhs2+4*A*cv*p*rhs0)
+                            *v^^2
+                           +(4*A*R*rho*rhs1*u+(4*A^^2*cv-2*A*cv*dA)*p*rhs3
+                                             -4*A*cv*p*rhs1)
+                            *v+(4*A*R-2*R*dA)*rho*rhs0*u^^2
+                           +((2*R*dA-4*A*R)*rho*rhs2+(4*A*R-2*R*dA)*p*rhs0)*u)
+                     /((2*A*R*dA+4*A^^2*cv)*rho^^2*v^^3+((2*A*R*dA-4*A^^2*R)*rho^^2*u
+                                 +(2*A*R*dA-4*A^^2*R)*p*rho)
+                                 *v);
+        dP1dfj ~= Primitives(rho=dr1dfj, p=dp1dfj, v=dv1dfj, u=du1dfj);
+	}
+
+    // Okay so this is derivative of the current batch of primitves w.r.t to the
+    // friction f in THIS cell, assuming that all of the other f's are zero
+    double D = (R*dA+2*A*cv)*rho*v^^2+(R*dA-2*A*R)*rho*u+(R*dA-2*A*R)*p;
+    double dr1df0 = ((2*c*cv+2*R*c)*rho*rho0*v0^^2)/D;
+    double dv1df0 =  -((2*c*cv+2*R*c)*rho0*v*v0^^2)/D
+    double dp1df0 = ((2*R*c*rho*rho0*v^^2+2*R*c*rho*rho0*u+2*R*c*p*rho0)*v0^^2)/D
+    double du1df0 = ((2*c*cv*rho*rho0*v^^2-2*R*c*rho*rho0*u+2*c*cv*p*rho0)*v0^^2)
+                    /((R*dA+2*A*cv)*rho^^2*v^^2+(R*dA-2*A*R)*rho^^2*u+(R*dA-2*A*R)*p*rho);
+
+	dP1dfj ~= Primitives(rho=dr1df0, p=dp1df0, v=dv1df0, u=du1df0);
+}
+
+
 Primitives f_derivative(Primitives P1, Primitives P2, Primitives dP1df, double f, double dA,
                         double A1, double A2, double dx, GasState gs, GasModel gm){
 /*

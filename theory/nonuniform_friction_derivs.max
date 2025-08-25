@@ -1,0 +1,79 @@
+/* ---------------------------------------------------------
+Maxima File to compute linearised conservation eqns for scrf
+
+@author: Nick Gibbons
+-----------------------------------------------------------*/
+
+mass:rho*v*A - rho0*v0*A0;
+mom:rho*v*v*A + p*A - rho0*v0*v0*A0 - p0*A0 -(p+p0)/2*dA + c*f*rho0*v0*v0;
+nrg:rho*v*A*(u+v*v/2) + p*A*v - rho0*v0*A0*(u0+v0*v0/2) - p0*A0*v0;
+eos:p-rho*R*u/cv;
+
+/* Okay this matches what you get when you do all the substitution */
+
+J:matrix([diff(mass, rho), diff(mass, v), diff(mass, p), diff(mass, u)],
+         [diff(mom, rho), diff(mom, v), diff(mom, p), diff(mom, u)],
+         [diff(nrg, rho), diff(nrg, v), diff(nrg, p), diff(nrg, u)],
+         [diff(eos, rho), diff(eos, v), diff(eos, p), diff(eos, u)]);
+
+
+dRdf:matrix([diff(mass, f)], [diff(mom,f)], [diff(nrg, f)], [diff(eos, f)]);
+
+Jinv:invert(J)$
+
+dUdf:Jinv.-dRdf$
+
+display2d:false$
+
+drdf:dUdf[1,1]$
+drdf:fullratsimp(drdf)$
+bot:denom(drdf);
+drdf:subst(D, bot, drdf);
+print("")$
+
+dvdf:dUdf[2,1]$
+dvdf:fullratsimp(dvdf)$
+dvdf:subst(D, bot, dvdf);
+print("")$
+
+dpdf:dUdf[3,1]$
+dpdf:fullratsimp(dpdf)$
+dpdf:subst(D, bot, dpdf);
+print("")$
+
+dudf:dUdf[4,1]$
+dudf:fullratsimp(dudf)$
+dudf:subst(D, bot, dudf);
+print("")$
+
+print("Okay now we do a prior f");
+
+dU0dfj:matrix([dr0dfj], [dv0dfj], [dp0dfj], [du0dfj])$
+dRdU0:matrix([diff(mass,rho0), diff(mass,v0), diff(mass,p0), diff(mass,u0)],
+             [diff(mom, rho0), diff(mom, v0), diff(mom, p0), diff(mom, u0)],
+             [diff(nrg, rho0), diff(nrg, v0), diff(nrg, p0), diff(nrg, u0)],
+             [diff(eos, rho0), diff(eos, v0), diff(eos, p0), diff(eos, u0)])$
+rhs_a:-dRdU0.dU0dfj$
+rhs_a0:fullratsimp(rhs_a[1,1]);
+rhs_a1:fullratsimp(rhs_a[2,1]);
+rhs_a2:fullratsimp(rhs_a[3,1]);
+rhs_a3:fullratsimp(rhs_a[4,1]);
+print("")$
+
+rhs:matrix([rhs0], [rhs1], [rhs2], [rhs3])$
+dUdfj:Jinv.rhs$
+drdf:dUdfj[1,1]$
+drdf:fullratsimp(drdf);
+print("")$
+
+dvdf:dUdfj[2,1]$
+dvdf:fullratsimp(dvdf);
+print("")$
+
+dpdf:dUdfj[3,1]$
+dpdf:fullratsimp(dpdf);
+print("")$
+
+dudf:dUdfj[4,1]$
+dudf:fullratsimp(dudf);
+print("")$
