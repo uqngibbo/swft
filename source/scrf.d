@@ -150,8 +150,8 @@ int main(string[] args)
     gm.update_thermo_from_pT(gs);
     gm.update_sound_speed(gs);
 
-    double v = cfg.v0;
-    double M = v/gs.a.re;
+    double v0 = cfg.v0;
+    double M = v0/gs.a.re;
     double cv = gm.dudT_const_v(gs).re;
     double R = gm.gas_constant(gs).re;
 
@@ -161,21 +161,21 @@ int main(string[] args)
     double As = interpolate(cfg.xi, cfg.Ai, x0);
     double Hdot = cfg.Hdot; // Volumetric heat addition rate W/m3
 
-    print_state("Init", v, M, As, gs, gm);
+    print_state("Init", v0, M, As, gs, gm);
 
     SimData[] fderivs;
     SimData[] Hderivs;
 
     double[] xs;
     SimData[] simdata;
-    size_t nreserve = to!size_t((xf-x0)/(v*dt))*2;
+    size_t nreserve = to!size_t((xf-x0)/(v0*dt))*2;
     writefln("Timestep %e, Reserving space for %d simdatas", dt, nreserve);
     simdata.reserve(nreserve);
     xs.reserve(nreserve);
 
     double gamma = gm.gamma(gs).re;
 
-    Primitives P0 = Primitives(gs.rho.re, gs.p.re, v, gs.u.re);
+    Primitives P0 = Primitives(gs.rho.re, gs.p.re, v0, gs.u.re);
     Primitives dPdf0 = Primitives(0.0, 0.0, 0.0, 0.0);
     Primitives dPdf;
     Primitives dPdH0 = Primitives(0.0, 0.0, 0.0, 0.0);
@@ -197,7 +197,7 @@ int main(string[] args)
         double A = interpolate(cfg.xi, cfg.Ai, x);
         double f = interpolate(cfg.xf, cfg.f, x);
 
-        double dx = v*dt;
+        double dx = v0*dt; // This needs to be constant to get the right derivatives...
         if (x+dx>=xf) {
             last_step = true;
             dx = xf-x;
@@ -234,11 +234,11 @@ int main(string[] args)
             // datastructure.
             double dTdf = dPdf.u/cv;
             double dadf = 0.5*sqrt(gamma*R/gs.T.re)*dTdf;
-            double dMdf = (gs.a.re*dPdf.v - v*dadf)/gs.a.re/gs.a.re;
+            double dMdf = (gs.a.re*dPdf.v - P1.v*dadf)/gs.a.re/gs.a.re;
             fderivs ~= SimData(dPdf.p, dTdf, dPdf.rho, 0.0, dPdf.v, dMdf, 0.0);
             double dTdH = dPdH.u/cv;
             double dadH = 0.5*sqrt(gamma*R/gs.T.re)*dTdH;
-            double dMdH = (gs.a.re*dPdH.v - v*dadH)/gs.a.re/gs.a.re;
+            double dMdH = (gs.a.re*dPdH.v - P1.v*dadH)/gs.a.re/gs.a.re;
             Hderivs ~= SimData(dPdH.p, dTdH, dPdH.rho, 0.0, dPdH.v, dMdH, 0.0);
             dPdf0 = dPdf;
             dPdH0 = dPdH;
@@ -252,7 +252,7 @@ int main(string[] args)
     }
     writeln("");
     writefln("Done in %d iters", iter);
-    print_state(" End", v, M, As, gs, gm);
+    print_state(" End", P0.v, M, As, gs, gm);
 
     string output_file_name = format("%s.bin", config_file_name.chomp(".yaml"));
     writefln("Writing solution to file %s...", output_file_name);
