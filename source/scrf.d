@@ -161,7 +161,6 @@ int main(string[] args)
 
     print_state("Init", v0, M, As, gs, gm);
 
-    SimData[] fderivs;
     SimData[] fderivs_lower;
     SimData[] fderivs_upper;
     SimData[] Hderivs;
@@ -187,7 +186,6 @@ int main(string[] args)
     simdata ~= SimData(P0.p, gs.T.re, P0.rho, As, P0.v, M, gamma);
     xs ~= x0;
     if (cfg.calc_derivatives) {
-        fderivs ~= SimData(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
         fderivs_lower~= SimData(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
         fderivs_upper~= SimData(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
         Hderivs~= SimData(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
@@ -252,12 +250,6 @@ int main(string[] args)
             // Custom constructor that autodiffs the T and M maybe?
             // TODO: Get this outta here.... I think the derivatives deserve their own
             // datastructure.
-            Primitives dPkdf0 = dPkdfj[$-1][0];
-            double dTdf0= dPkdf0.u/cv;
-            double dadf0= 0.5*sqrt(gamma*R/gs.T.re)*dTdf0;
-            double dMdf0= (gs.a.re*dPkdf0.v - P1.v*dadf0)/gs.a.re/gs.a.re;
-            fderivs ~= SimData(dPkdf0.p, dTdf0, dPkdf0.rho, 0.0, dPkdf0.v, dMdf0, 0.0);
-
             double dTdfl= dPdfl.u/cv;
             double dadfl= 0.5*sqrt(gamma*R/gs.T.re)*dTdfl;
             double dMdfl= (gs.a.re*dPdfl.v - P1.v*dadfl)/gs.a.re/gs.a.re;
@@ -290,15 +282,12 @@ int main(string[] args)
     write_solution_to_file(xs, simdata, output_file_name);
 
     if (cfg.calc_derivatives) {
-        string derivs_file_name = format("fderivs-%s.bin", config_file_name.chomp(".yaml"));
-        writefln("Writing derivs to file %s...", derivs_file_name);
-        write_solution_to_file(xs, fderivs, derivs_file_name);
-
-        derivs_file_name = format("fderivs_lower-%s.bin", config_file_name.chomp(".yaml"));
+        string derivs_file_name;
+        derivs_file_name = format("fderivs_%04d-%s.bin", 0, config_file_name.chomp(".yaml"));
         writefln("Writing derivs to file %s...", derivs_file_name);
         write_solution_to_file(xs, fderivs_lower, derivs_file_name);
 
-        derivs_file_name = format("fderivs_upper-%s.bin", config_file_name.chomp(".yaml"));
+        derivs_file_name = format("fderivs_%04d-%s.bin", 1, config_file_name.chomp(".yaml"));
         writefln("Writing derivs to file %s...", derivs_file_name);
         write_solution_to_file(xs, fderivs_upper, derivs_file_name);
 

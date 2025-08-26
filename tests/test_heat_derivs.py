@@ -61,11 +61,11 @@ def test_output():
     assert isclose(L2['v'], 6.290e-11, 1e-4)
 
 def test_cleanup():
-    cmd = "rm heat_addition.bin perturb_heat_addition.bin fderivs-heat_addition.bin Hderivs-heat_addition.bin"
+    cmd = "rm heat_addition.bin perturb_heat_addition.bin"
     proc = subprocess.run(cmd.split(), capture_output=True, text=True)
     assert proc.returncode == 0, "Failed cmd: "+cmd
 
-    cmd = "rm fderivs_lower-heat_addition.bin fderivs_upper-heat_addition.bin"
+    cmd = "rm fderivs_0001-heat_addition.bin fderivs_0000-heat_addition.bin Hderivs-heat_addition.bin"
     proc = subprocess.run(cmd.split(), capture_output=True, text=True)
     assert proc.returncode == 0, "Failed cmd: "+cmd
 

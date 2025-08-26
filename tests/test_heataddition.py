@@ -72,7 +72,7 @@ def test_output():
     assert isclose(data['T'][-1], 774.844, 1e-4)
 
 def test_cleanup():
-    cmd = "rm heat_addition.bin fderivs-heat_addition.bin fderivs_lower-heat_addition.bin fderivs_upper-heat_addition.bin Hderivs-heat_addition.bin"
+    cmd = "rm heat_addition.bin fderivs_0000-heat_addition.bin fderivs_0001-heat_addition.bin Hderivs-heat_addition.bin"
     proc = subprocess.run(cmd.split(), capture_output=True, text=True)
     assert proc.returncode == 0, "Failed cmd: "+cmd
 

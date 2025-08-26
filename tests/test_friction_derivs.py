@@ -49,10 +49,9 @@ def read_derivs(name0, name1):
     #keys = ['p', 'v', 'rho', 'M', 'T']
     #dUdf_fd = {key:(data1[key]-data0[key])/(f1-f0) for  key in keys}
 
-    dUdf = read_solution_file("fderivs-{}.bin".format(name0))
-    dUdfl= read_solution_file("fderivs_lower-{}.bin".format(name0))
-    dUdfu= read_solution_file("fderivs_upper-{}.bin".format(name0))
-    return data0, data1, dUdfl, dUdfu, dUdf
+    dUdfl= read_solution_file("fderivs_0000-{}.bin".format(name0))
+    dUdfu= read_solution_file("fderivs_0001-{}.bin".format(name0))
+    return data0, data1, dUdfl, dUdfu
 
 def get_L2_norms(dUdf_fd, dUdf):
     n = dUdf_fd['rho'].size
@@ -81,7 +80,7 @@ def test_runscrf():
     assert proc.returncode == 0, "Failed cmd: "+cmd
 
 def test_output():
-    data0, data1, dUdfl, dUdfu, dUdf = read_derivs('baseline', 'perturbed')
+    data0, data1, dUdfl, dUdfu = read_derivs('baseline', 'perturbed')
     df = 1e-6
     keys = ['p', 'v', 'rho', 'M', 'T']
     dUdf_fd = {key:(data1[key]-data0[key])/(df) for key in keys}
@@ -97,7 +96,7 @@ def test_cleanup():
     proc = subprocess.run(cmd.split(), capture_output=True, text=True)
     assert proc.returncode == 0, "Failed cmd: "+cmd
 
-    cmd = "rm Hderivs-baseline.bin fderivs-baseline.bin fderivs_upper-baseline.bin fderivs_lower-baseline.bin"
+    cmd = "rm Hderivs-baseline.bin fderivs_0000-baseline.bin fderivs_0001-baseline.bin"
     proc = subprocess.run(cmd.split(), capture_output=True, text=True)
     assert proc.returncode == 0, "Failed cmd: "+cmd
 
@@ -108,7 +107,7 @@ def test_cleanup():
 
 if __name__=='__main__':
     test_runscrf()
-    data0, data1, dUdfl, dUdfu, dUdf = read_derivs('baseline', 'perturbed')
+    data0, data1, dUdfl, dUdfu = read_derivs('baseline', 'perturbed')
 
     df = 1e-6
     keys = ['p', 'v', 'rho', 'M', 'T']
