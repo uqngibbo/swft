@@ -164,6 +164,8 @@ int main(string[] args)
     print_state("Init", v0, M, As, gs, gm);
 
     SimData[] fderivs;
+    SimData[] fderivs_lower;
+    SimData[] fderivs_upper;
     SimData[] Hderivs;
 
     double[] xs;
@@ -176,17 +178,20 @@ int main(string[] args)
     double gamma = gm.gamma(gs).re;
 
     Primitives P0 = Primitives(gs.rho.re, gs.p.re, v0, gs.u.re);
-    Primitives dPdf0 = Primitives(0.0, 0.0, 0.0, 0.0);
-    Primitives dPdf;
-    Primitives[][] dPkdfj;
+    
+    Primitives[][] dPkdfj; // dUdf at each point (x)
+    Primitives dPdfl;     // dUdf at each f schedule control point
+    Primitives dPdfu;     // dUdf at each f schedule control point
+
     Primitives dPdH0 = Primitives(0.0, 0.0, 0.0, 0.0);
     Primitives dPdH;
-
 
     simdata ~= SimData(P0.p, gs.T.re, P0.rho, As, P0.v, M, gamma);
     xs ~= x0;
     if (cfg.calc_derivatives) {
-        fderivs~= SimData(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+        fderivs ~= SimData(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+        fderivs_lower~= SimData(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+        fderivs_upper~= SimData(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
         Hderivs~= SimData(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
         dPkdfj.length=1;
     }
@@ -198,7 +203,6 @@ int main(string[] args)
     while (x<=xf) {
         double A = interpolate(cfg.xi, cfg.Ai, x);
         double f = interpolate(cfg.xf, cfg.f, x);
-        //if (iter==0) f+= 1e-6;
 
         double dx = v0*dt; // This needs to be constant to get the right derivatives...
         if (x+dx>=xf) {
@@ -211,11 +215,19 @@ int main(string[] args)
 
         Primitives P1 = increment_primitives(x, A, dx, dA, Hdot, f, P0, gm, gs);
         if (cfg.calc_derivatives) {
-            dPdf = f_derivative(P0, P1, dPdf0, f, dA, A, A1, dx, gs2, gm);
 
             Primitives[] dP1dfj;
             f_derivative_nonuniform(P0, P1, dPkdfj[iter],f, dA, dP1dfj,
                                     A, A1, dx, gs, gm);
+            dPdfu = Primitives(0.0, 0.0, 0.0, 0.0);
+            dPdfl = Primitives(0.0, 0.0, 0.0, 0.0);
+            foreach(j, dP1df_x; dP1dfj){
+                double xj = xs[j];
+                double dfdfl = 1.0 - (xj-cfg.xf[0])/(cfg.xf[$-1] - cfg.xf[0]);
+                double dfdfu =       (xj-cfg.xf[0])/(cfg.xf[$-1] - cfg.xf[0]);
+                dPdfl += dP1df_x*dfdfl;
+                dPdfu += dP1df_x*dfdfu;
+            }
             dPkdfj ~= dP1dfj;
             dPdH = H_derivative(P0, P1, dPdH0, f, Hdot, dA, A, A1, dx, gs2, gm);
         }
@@ -239,30 +251,32 @@ int main(string[] args)
  
 
         if (cfg.calc_derivatives){
-            writefln("dPdf: %s", dPdf);
-            writefln("dPdf0: %s", dPdf0);
-            foreach(j, dPdfj; dPkdfj[iter+1]){
-                writefln("    i: %d j: %d dPdfj: %s", iter+1, j, dPdfj);
-            }
-            writefln("");
             // Custom constructor that autodiffs the T and M maybe?
             // TODO: Get this outta here.... I think the derivatives deserve their own
             // datastructure.
-            double dTdf = dPdf.u/cv;
-            double dadf = 0.5*sqrt(gamma*R/gs.T.re)*dTdf;
-            double dMdf = (gs.a.re*dPdf.v - P1.v*dadf)/gs.a.re/gs.a.re;
-            fderivs ~= SimData(dPdf.p, dTdf, dPdf.rho, 0.0, dPdf.v, dMdf, 0.0);
+            Primitives dPkdf0 = dPkdfj[$-1][0];
+            double dTdf0= dPkdf0.u/cv;
+            double dadf0= 0.5*sqrt(gamma*R/gs.T.re)*dTdf0;
+            double dMdf0= (gs.a.re*dPkdf0.v - P1.v*dadf0)/gs.a.re/gs.a.re;
+            fderivs ~= SimData(dPkdf0.p, dTdf0, dPkdf0.rho, 0.0, dPkdf0.v, dMdf0, 0.0);
+
+            double dTdfl= dPdfl.u/cv;
+            double dadfl= 0.5*sqrt(gamma*R/gs.T.re)*dTdfl;
+            double dMdfl= (gs.a.re*dPdfl.v - P1.v*dadfl)/gs.a.re/gs.a.re;
+            fderivs_lower ~= SimData(dPdfl.p, dTdfl, dPdfl.rho, 0.0, dPdfl.v, dMdfl, 0.0);
+
+            double dTdfu = dPdfu.u/cv;
+            double dadfu = 0.5*sqrt(gamma*R/gs.T.re)*dTdfu;
+            double dMdfu = (gs.a.re*dPdfu.v - P1.v*dadfu)/gs.a.re/gs.a.re;
+            fderivs_upper ~= SimData(dPdfu.p, dTdfu, dPdfu.rho, 0.0, dPdfu.v, dMdfu, 0.0);
+
             double dTdH = dPdH.u/cv;
             double dadH = 0.5*sqrt(gamma*R/gs.T.re)*dTdH;
             double dMdH = (gs.a.re*dPdH.v - P1.v*dadH)/gs.a.re/gs.a.re;
             Hderivs ~= SimData(dPdH.p, dTdH, dPdH.rho, 0.0, dPdH.v, dMdH, 0.0);
-            dPdf0 = dPdf;
             dPdH0 = dPdH;
         }
 
-        if (iter==2) {
-            last_step=true;
-        }
         iter += 1;
         if ((iter%20==0)||(last_step)){
             progress_bar(x, x0, xf);
@@ -281,6 +295,14 @@ int main(string[] args)
         string derivs_file_name = format("fderivs-%s.bin", config_file_name.chomp(".yaml"));
         writefln("Writing derivs to file %s...", derivs_file_name);
         write_solution_to_file(xs, fderivs, derivs_file_name);
+
+        derivs_file_name = format("fderivs_lower-%s.bin", config_file_name.chomp(".yaml"));
+        writefln("Writing derivs to file %s...", derivs_file_name);
+        write_solution_to_file(xs, fderivs_lower, derivs_file_name);
+
+        derivs_file_name = format("fderivs_upper-%s.bin", config_file_name.chomp(".yaml"));
+        writefln("Writing derivs to file %s...", derivs_file_name);
+        write_solution_to_file(xs, fderivs_upper, derivs_file_name);
 
         derivs_file_name = format("Hderivs-%s.bin", config_file_name.chomp(".yaml"));
         writefln("Writing derivs to file %s...", derivs_file_name);

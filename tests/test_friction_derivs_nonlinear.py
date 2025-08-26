@@ -51,7 +51,9 @@ def read_derivs(name0, name1):
     #dUdf_fd = {key:(data1[key]-data0[key])/(f1-f0) for  key in keys}
 
     dUdf = read_solution_file("fderivs-{}.bin".format(name0))
-    return data0, data1, dUdf
+    dUdfl= read_solution_file("fderivs_lower-{}.bin".format(name0))
+    dUdfu= read_solution_file("fderivs_upper-{}.bin".format(name0))
+    return data0, data1, dUdfl, dUdfu, dUdf
 
 def get_L2_norms(dUdf_fd, dUdf):
     n = dUdf_fd['rho'].size
@@ -80,7 +82,7 @@ def test_runscrf():
     assert proc.returncode == 0, "Failed cmd: "+cmd
 
 def test_output():
-    data0, dUdf_fd, dUdf = read_derivs()
+    data0, dUdf_fd, dUdfl, dUdfu = read_derivs()
     L2 = get_L2_norms(dUdf_fd, dUdf)
 
     assert isclose(L2['rho'], 4.6954e-6, 1e-4)
@@ -111,17 +113,17 @@ if __name__=='__main__':
     #proc = subprocess.run(cmd.split(), capture_output=True, text=True)
     #assert proc.returncode == 0, "Failed cmd: "+cmd
 
-    data0, data1, dUdf = read_derivs('baseline', 'perturbed')
+    data0, data1, dUdfl, dUdfu, dUdf = read_derivs('baseline', 'perturbed')
 
     df = 1e-6
     keys = ['p', 'v', 'rho', 'M', 'T']
     dUdf_fd = {key:(data1[key]-data0[key])/(df) for key in keys}
-    print("Density derivative with respect to f0: ")
-    print(dUdf_fd['rho'])
-    print("velocity derivative with respect to f0: ")
-    print(dUdf_fd['v'])
-    print("pressure derivative with respect to f0: ")
-    print(dUdf_fd['p'])
+    print("Density derivative with respect to fl: ")
+    print(dUdf_fd['rho'][:10])
+    print("velocity derivative with respect to fl: ")
+    print(dUdf_fd['v'][:10])
+    print("pressure derivative with respect to fl: ")
+    print(dUdf_fd['p'][:10])
 
     #L2 = get_L2_norms(dUdf_fd, dUdf)
     #print("rho L2 norm: ", L2['rho'])
@@ -131,32 +133,32 @@ if __name__=='__main__':
     fig = plt.figure(figsize=(16,4))
     axes = fig.subplots(1,5)
 
-    axes[0].plot(data0['x'], dUdf_fd['rho'], linestyle='--', marker='.', linewidth=2.0, color='red')
-    axes[0].plot(data0['x'], dUdf['rho'], linestyle='-', marker='.', linewidth=1.0, color='maroon')
+    axes[0].plot(data0['x'], dUdf_fd['rho'], linestyle='--', linewidth=2.0, color='red')
+    axes[0].plot(data0['x'], dUdfl['rho'], linestyle='-',  linewidth=1.0, color='maroon')
     axes[0].set_xlabel('x (m)')
     axes[0].set_ylabel('drhodf')
     axes[0].grid()
 
     axes[1].plot(data0['x'], dUdf_fd['p'], linestyle='--', linewidth=2.0, color='cyan')
-    axes[1].plot(data0['x'], dUdf['p'], linestyle='-', linewidth=1.0, color='blue')
+    axes[1].plot(data0['x'], dUdfl['p'], linestyle='-', linewidth=1.0, color='blue')
     axes[1].set_xlabel('x (m)')
     axes[1].set_ylabel('dpdf')
     axes[1].grid()
 
     axes[2].plot(data0['x'], dUdf_fd['v'], linestyle='--', linewidth=2.0, color='green')
-    axes[2].plot(data0['x'], dUdf['v'], linestyle='-', linewidth=1.0, color='forestgreen')
+    axes[2].plot(data0['x'], dUdfl['v'], linestyle='-', linewidth=1.0, color='forestgreen')
     axes[2].set_xlabel('x (m)')
     axes[2].set_ylabel('dvdf')
     axes[2].grid()
 
     axes[3].plot(data0['x'], dUdf_fd['M'], linestyle='--', linewidth=2.0, color='grey')
-    axes[3].plot(data0['x'], dUdf['M'], linestyle='-', linewidth=1.0, color='black')
+    axes[3].plot(data0['x'], dUdfl['M'], linestyle='-', linewidth=1.0, color='black')
     axes[3].set_xlabel('x (m)')
     axes[3].set_ylabel('dMdf')
     axes[3].grid()
 
     axes[4].plot(data0['x'], dUdf_fd['T'], linestyle='--', linewidth=2.0, color='orange')
-    axes[4].plot(data0['x'], dUdf['T'], linestyle='-', linewidth=1.0, color='red')
+    axes[4].plot(data0['x'], dUdfl['T'], linestyle='-', linewidth=1.0, color='red')
     axes[4].set_xlabel('x (m)')
     axes[4].set_ylabel('dTdf')
     axes[4].grid()

@@ -75,6 +75,13 @@ struct Primitives {
 		return mixin("Primitives(rho"~op~"rhs, p"~op~"rhs, v"~op~"rhs, u"~op~"rhs)");
     }
 
+    void opOpAssign(string op: "+")(in Primitives rhs) {
+        rho += rhs.rho;
+        p   += rhs.p;
+        v   += rhs.v;
+        u   += rhs.u;
+    }
+
     string toString() const
     {
         char[] repr;
