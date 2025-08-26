@@ -36,24 +36,22 @@ def read_cfg(filename):
     for k,v in f.items(): cfg[k] = v
     return cfg
 
-def read_derivs():
-    name0 = 'temp'
+def read_derivs(name0, name1):
     cfg0  = read_cfg("{}.yaml".format(name0))
     data0= read_solution_file("{}.bin".format(name0))
     fi0= interp1d(cfg0['xf'], cfg0['f'])
-    f0 = fi0(data0['x'])
+    data0['f'] = fi0(data0['x'])
 
-    name1 = 'temp_perturbed'
     cfg1  = read_cfg("{}.yaml".format(name1))
     data1= read_solution_file("{}.bin".format(name1))
     fi1= interp1d(cfg1['xf'], cfg1['f'])
-    f1 = fi1(data1['x'])
+    data1['f'] = fi1(data1['x'])
 
-    keys = ['p', 'v', 'rho', 'M', 'T']
-    dUdf_fd = {key:(data1[key]-data0[key])/(f1-f0) for  key in keys}
+    #keys = ['p', 'v', 'rho', 'M', 'T']
+    #dUdf_fd = {key:(data1[key]-data0[key])/(f1-f0) for  key in keys}
 
     dUdf = read_solution_file("fderivs-{}.bin".format(name0))
-    return data0, dUdf_fd, dUdf
+    return data0, data1, dUdf
 
 def get_L2_norms(dUdf_fd, dUdf):
     n = dUdf_fd['rho'].size
@@ -96,35 +94,45 @@ def test_cleanup():
 
 
 if __name__=='__main__':
-    xf= [0.0, 1.0]
-    f = [0.005, 0.002]
-    f2= [0.005001, 0.002001]
-    with open('temp.yaml', 'w') as fp:
-        fp.write(TEMPLATE.format(xf, f, "true"))
+    #xf= [0.0, 1.0]
+    #f = [0.005, 0.002]
+    #f2= [0.005001, 0.002001]
+    #with open('temp.yaml', 'w') as fp:
+    #    fp.write(TEMPLATE.format(xf, f, "true"))
 
-    cmd = "scrf temp.yaml"
-    proc = subprocess.run(cmd.split(), capture_output=True, text=True)
-    assert proc.returncode == 0, "Failed cmd: "+cmd
+    #cmd = "scrf temp.yaml"
+    #proc = subprocess.run(cmd.split(), capture_output=True, text=True)
+    #assert proc.returncode == 0, "Failed cmd: "+cmd
 
-    with open('temp_perturbed.yaml', 'w') as fp:
-        fp.write(TEMPLATE.format(xf, f2, "false"))
+    #with open('temp_perturbed.yaml', 'w') as fp:
+    #    fp.write(TEMPLATE.format(xf, f2, "false"))
 
-    cmd = "scrf temp_perturbed.yaml"
-    proc = subprocess.run(cmd.split(), capture_output=True, text=True)
-    assert proc.returncode == 0, "Failed cmd: "+cmd
+    #cmd = "scrf temp_perturbed.yaml"
+    #proc = subprocess.run(cmd.split(), capture_output=True, text=True)
+    #assert proc.returncode == 0, "Failed cmd: "+cmd
 
-    data0, dUdf_fd, dUdf = read_derivs()
+    data0, data1, dUdf = read_derivs('baseline', 'perturbed')
 
-    L2 = get_L2_norms(dUdf_fd, dUdf)
-    print("rho L2 norm: ", L2['rho'])
-    print("p   L2 norm: ", L2['p'])
-    print("v   L2 norm: ", L2['v'])
+    df = 1e-6
+    keys = ['p', 'v', 'rho', 'M', 'T']
+    dUdf_fd = {key:(data1[key]-data0[key])/(df) for key in keys}
+    print("Density derivative with respect to f0: ")
+    print(dUdf_fd['rho'])
+    print("velocity derivative with respect to f0: ")
+    print(dUdf_fd['v'])
+    print("pressure derivative with respect to f0: ")
+    print(dUdf_fd['p'])
+
+    #L2 = get_L2_norms(dUdf_fd, dUdf)
+    #print("rho L2 norm: ", L2['rho'])
+    #print("p   L2 norm: ", L2['p'])
+    #print("v   L2 norm: ", L2['v'])
 
     fig = plt.figure(figsize=(16,4))
     axes = fig.subplots(1,5)
 
-    axes[0].plot(data0['x'], dUdf_fd['rho'], linestyle='--', linewidth=2.0, color='red')
-    axes[0].plot(data0['x'], dUdf['rho'], linestyle='-', linewidth=1.0, color='maroon')
+    axes[0].plot(data0['x'], dUdf_fd['rho'], linestyle='--', marker='.', linewidth=2.0, color='red')
+    axes[0].plot(data0['x'], dUdf['rho'], linestyle='-', marker='.', linewidth=1.0, color='maroon')
     axes[0].set_xlabel('x (m)')
     axes[0].set_ylabel('drhodf')
     axes[0].grid()

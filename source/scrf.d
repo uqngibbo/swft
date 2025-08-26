@@ -124,10 +124,10 @@ Primitives increment_primitives(double x, double A, double dx, double dA, double
     double du_gda = ((rho*taupiDdx-dA*p*rho)*v^^3+Qdot*rho*v^^2+(p-dfdr*rho)*taupiDdx*v
                      -Qdot*dfdr*rho)/(denom*v);
 
-    return Primitives(rho = rho + drho,
-                      p   = p   + dp_gda,
-                      v   = v   + dv,
-                      u   = u   + du_gda);
+    return Primitives(rho + drho,
+                      p   + dp_gda,
+                      v   + dv,
+                      u   + du_gda);
 }
 
 
@@ -178,6 +178,7 @@ int main(string[] args)
     Primitives P0 = Primitives(gs.rho.re, gs.p.re, v0, gs.u.re);
     Primitives dPdf0 = Primitives(0.0, 0.0, 0.0, 0.0);
     Primitives dPdf;
+    Primitives[][] dPkdfj;
     Primitives dPdH0 = Primitives(0.0, 0.0, 0.0, 0.0);
     Primitives dPdH;
 
@@ -187,6 +188,7 @@ int main(string[] args)
     if (cfg.calc_derivatives) {
         fderivs~= SimData(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
         Hderivs~= SimData(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+        dPkdfj.length=1;
     }
 
     size_t iter = 0; 
@@ -196,6 +198,7 @@ int main(string[] args)
     while (x<=xf) {
         double A = interpolate(cfg.xi, cfg.Ai, x);
         double f = interpolate(cfg.xf, cfg.f, x);
+        //if (iter==0) f+= 1e-6;
 
         double dx = v0*dt; // This needs to be constant to get the right derivatives...
         if (x+dx>=xf) {
@@ -209,6 +212,11 @@ int main(string[] args)
         Primitives P1 = increment_primitives(x, A, dx, dA, Hdot, f, P0, gm, gs);
         if (cfg.calc_derivatives) {
             dPdf = f_derivative(P0, P1, dPdf0, f, dA, A, A1, dx, gs2, gm);
+
+            Primitives[] dP1dfj;
+            f_derivative_nonuniform(P0, P1, dPkdfj[iter],f, dA, dP1dfj,
+                                    A, A1, dx, gs, gm);
+            dPkdfj ~= dP1dfj;
             dPdH = H_derivative(P0, P1, dPdH0, f, Hdot, dA, A, A1, dx, gs2, gm);
         }
 
@@ -228,7 +236,15 @@ int main(string[] args)
         xs ~= x;
         P0 = P1;
 
+ 
+
         if (cfg.calc_derivatives){
+            writefln("dPdf: %s", dPdf);
+            writefln("dPdf0: %s", dPdf0);
+            foreach(j, dPdfj; dPkdfj[iter+1]){
+                writefln("    i: %d j: %d dPdfj: %s", iter+1, j, dPdfj);
+            }
+            writefln("");
             // Custom constructor that autodiffs the T and M maybe?
             // TODO: Get this outta here.... I think the derivatives deserve their own
             // datastructure.
@@ -244,6 +260,9 @@ int main(string[] args)
             dPdH0 = dPdH;
         }
 
+        if (iter==2) {
+            last_step=true;
+        }
         iter += 1;
         if ((iter%20==0)||(last_step)){
             progress_bar(x, x0, xf);
