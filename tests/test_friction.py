@@ -76,7 +76,7 @@ def test_output():
     assert isclose(data['T'][-1], 810.726, 1e-4)
 
 def test_cleanup():
-    cmd = "rm friction.bin fderivs-friction.bin Hderivs-friction.bin"
+    cmd = "rm friction.bin"
     proc = subprocess.run(cmd.split(), capture_output=True, text=True)
     assert proc.returncode == 0, "Failed cmd: "+cmd
     

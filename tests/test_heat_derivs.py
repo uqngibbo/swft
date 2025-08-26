@@ -65,6 +65,10 @@ def test_cleanup():
     proc = subprocess.run(cmd.split(), capture_output=True, text=True)
     assert proc.returncode == 0, "Failed cmd: "+cmd
 
+    cmd = "rm fderivs_lower-heat_addition.bin fderivs_upper-heat_addition.bin"
+    proc = subprocess.run(cmd.split(), capture_output=True, text=True)
+    assert proc.returncode == 0, "Failed cmd: "+cmd
+
 
 if __name__=='__main__':
 
