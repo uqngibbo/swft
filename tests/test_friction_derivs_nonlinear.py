@@ -1,12 +1,11 @@
 """
-Test code for edict, currently conduction only.
+Test code for swft, checking derivatives of the f distribution.
 
 @author: Nick
 """
 
 from numpy import array, zeros, interp, frombuffer, array, concatenate, log, linspace, isclose, sqrt
 import struct
-from io import BytesIO, BufferedWriter
 import matplotlib.pyplot as plt
 import subprocess
 from test_friction import read_solution_file
@@ -65,70 +64,61 @@ def get_L2_norms(dUdf_fd, dUdf):
 
 def test_runscrf():
     xf= [0.0, 1.0]
-    f = [0.005, 0.002]
-    f2= [0.005001, 0.002001]
-    with open('temp.yaml', 'w') as fp:
+    f = [0.005, 0.005]
+    f2= [0.005001, 0.005]
+    with open('baseline.yaml', 'w') as fp:
         fp.write(TEMPLATE.format(xf, f, "true"))
 
-    cmd = "scrf temp.yaml"
+    cmd = "scrf baseline.yaml"
     proc = subprocess.run(cmd.split(), capture_output=True, text=True)
     assert proc.returncode == 0, "Failed cmd: "+cmd
 
-    with open('temp_perturbed.yaml', 'w') as fp:
+    with open('perturbed.yaml', 'w') as fp:
         fp.write(TEMPLATE.format(xf, f2, "false"))
 
-    cmd = "scrf temp_perturbed.yaml"
+    cmd = "scrf perturbed.yaml"
     proc = subprocess.run(cmd.split(), capture_output=True, text=True)
     assert proc.returncode == 0, "Failed cmd: "+cmd
 
 def test_output():
-    data0, dUdf_fd, dUdfl, dUdfu = read_derivs()
-    L2 = get_L2_norms(dUdf_fd, dUdf)
+    data0, data1, dUdfl, dUdfu, dUdf = read_derivs('baseline', 'perturbed')
+    df = 1e-6
+    keys = ['p', 'v', 'rho', 'M', 'T']
+    dUdf_fd = {key:(data1[key]-data0[key])/(df) for key in keys}
+    L2 = get_L2_norms(dUdf_fd, dUdfl)
 
-    assert isclose(L2['rho'], 4.6954e-6, 1e-4)
-    assert isclose(L2['p'], 11.184, 1e-4)
-    assert isclose(L2['v'], 0.35706, 1e-4)
+    assert isclose(L2['rho'], 3.9281e-06, 1e-4)
+    assert isclose(L2['p'], 9.3518, 1e-4)
+    assert isclose(L2['v'], 0.28713, 1e-4)
+
 
 def test_cleanup():
-    cmd = "rm temp.bin temp_perturbed.bin Hderivs-temp.bin fderivs-temp.bin"
+    cmd = "rm baseline.bin perturbed.bin"
+    proc = subprocess.run(cmd.split(), capture_output=True, text=True)
+    assert proc.returncode == 0, "Failed cmd: "+cmd
+
+    cmd = "rm Hderivs-baseline.bin fderivs-baseline.bin fderivs_upper-baseline.bin fderivs_lower-baseline.bin"
+    proc = subprocess.run(cmd.split(), capture_output=True, text=True)
+    assert proc.returncode == 0, "Failed cmd: "+cmd
+
+    cmd = "rm baseline.yaml perturbed.yaml"
     proc = subprocess.run(cmd.split(), capture_output=True, text=True)
     assert proc.returncode == 0, "Failed cmd: "+cmd
 
 
 if __name__=='__main__':
-    #xf= [0.0, 1.0]
-    #f = [0.005, 0.002]
-    #f2= [0.005001, 0.002001]
-    #with open('temp.yaml', 'w') as fp:
-    #    fp.write(TEMPLATE.format(xf, f, "true"))
-
-    #cmd = "scrf temp.yaml"
-    #proc = subprocess.run(cmd.split(), capture_output=True, text=True)
-    #assert proc.returncode == 0, "Failed cmd: "+cmd
-
-    #with open('temp_perturbed.yaml', 'w') as fp:
-    #    fp.write(TEMPLATE.format(xf, f2, "false"))
-
-    #cmd = "scrf temp_perturbed.yaml"
-    #proc = subprocess.run(cmd.split(), capture_output=True, text=True)
-    #assert proc.returncode == 0, "Failed cmd: "+cmd
-
+    test_runscrf()
     data0, data1, dUdfl, dUdfu, dUdf = read_derivs('baseline', 'perturbed')
 
     df = 1e-6
     keys = ['p', 'v', 'rho', 'M', 'T']
     dUdf_fd = {key:(data1[key]-data0[key])/(df) for key in keys}
-    print("Density derivative with respect to fl: ")
-    print(dUdf_fd['rho'][:10])
-    print("velocity derivative with respect to fl: ")
-    print(dUdf_fd['v'][:10])
-    print("pressure derivative with respect to fl: ")
-    print(dUdf_fd['p'][:10])
 
-    #L2 = get_L2_norms(dUdf_fd, dUdf)
-    #print("rho L2 norm: ", L2['rho'])
-    #print("p   L2 norm: ", L2['p'])
-    #print("v   L2 norm: ", L2['v'])
+    L2 = get_L2_norms(dUdf_fd, dUdfl)
+
+    print("rho L2 norm: ", L2['rho'])
+    print("p   L2 norm: ", L2['p'])
+    print("v   L2 norm: ", L2['v'])
 
     fig = plt.figure(figsize=(16,4))
     axes = fig.subplots(1,5)

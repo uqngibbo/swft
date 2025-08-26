@@ -5,9 +5,7 @@
 
     Todo List:
      - Python bindings
-     - Thermally Perfect Gas
      - Reactions
-     - Multiple f and H values
      - Actually try the scramjet flow
      - Nonsymbolic derivatives that are a bit less messed up.
 
