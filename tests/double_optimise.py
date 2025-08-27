@@ -105,7 +105,7 @@ f1= 4.0
 H = 7.0
 x0 = array([f0, f1, H])
 print("Starting with f=[{:5.5f},{:5.5f}] H={:5.5e}".format(f0, f1, H))
-#res = minimize(objective, x0, bounds=(array([0.0, 100.0]),array([0.0, 100.0]),array([0.0, 20.0])), method='SLSQP', jac='2-point', options={'eps': 1e-3,'finite_diff_rel_step':1e-3}, tol=1e-4)
+#res = minimize(objective, x0, bounds=(array([0.0, 100.0]),array([0.0, 100.0]),array([0.0, 20.0])), method='SLSQP', jac='2-point', options={'eps': 1e-3,'finite_diff_rel_step':1e-3}, tol=1e-8)
 res = minimize(objective, x0, bounds=(array([0.0, 100.0]),array([0.0, 100.0]),array([0.0, 20.0])), method='SLSQP', jac=jacobian, tol=1e-8, options={'disp':True})
 
 print("Done... found f0,f1,H={})".format(res.x))
