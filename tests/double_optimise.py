@@ -10,7 +10,7 @@ from scipy.interpolate import interp1d
 import subprocess
 from test_friction import read_solution_file
 import yaml
-from pylab import plot,show
+import matplotlib.pyplot as plt
 
 f_ref = 1e-3
 H_ref = 1e7
@@ -43,14 +43,11 @@ def objective(x):
     assert proc.returncode == 0, "Failed cmd: "+cmd
 
     current = read_solution_file('temp.bin')
-    #ref = absolute(target['v']).max()
-    #ref = 1.0
-    # Not sure about this reference value
 
-    n = current['v'].size
-    interp = interp1d(target['x'], target['v'])
+    n = current[var].size
+    interp = interp1d(target['x'], target[var])
     interped_v = interp(current['x'])
-    current_v = current['v']
+    current_v = current[var]
 
     L22= ((current_v-interped_v)**2).sum()/n
     print("Called obj with f=[{},{}] H={} and output={}".format(f0/f_ref, f1/f_ref, H/H_ref, L22))
@@ -68,26 +65,26 @@ def jacobian(x):
     assert proc.returncode == 0, "Failed cmd: "+cmd
 
     current = read_solution_file('temp.bin')
-    #ref = absolute(target['v']).max()
-    #ref = 1.0
 
-    n = current['v'].size
-    interp = interp1d(target['x'], target['v'])
+    n = current[var].size
+    interp = interp1d(target['x'], target[var])
     interped_v = interp(current['x'])
-    current_v = current['v']
+    current_v = current[var]
 
     fderivs0 = read_solution_file("fderivs_0000-temp.bin")
     fderivs1 = read_solution_file("fderivs_0001-temp.bin")
-    Jf0 = 2.0/n*((current_v-interped_v)*fderivs0['v']*f_ref).sum()
-    Jf1 = 2.0/n*((current_v-interped_v)*fderivs1['v']*f_ref).sum()
+    Jf0 = 2.0/n*((current_v-interped_v)*fderivs0[var]*f_ref).sum()
+    Jf1 = 2.0/n*((current_v-interped_v)*fderivs1[var]*f_ref).sum()
 
     Hderivs = read_solution_file("Hderivs-temp.bin")
-    Hderivs_v = Hderivs['v']
+    Hderivs_v = Hderivs[var]
     JH = 2.0/n*((current_v-interped_v)*Hderivs_v*H_ref).sum()
 
     print("       jac with f=[{},{}] H={} and output={},{},{}".format(f0/f_ref,f1/f_ref,H/H_ref,Jf0,Jf1,JH))
     return array([Jf0, Jf1, JH])
 
+#var = 'v'
+var = 'M'
 target = read_solution_file('combined.bin')
 
 #f0 = 1.0
@@ -109,18 +106,34 @@ H = 7.0
 x0 = array([f0, f1, H])
 print("Starting with f=[{:5.5f},{:5.5f}] H={:5.5e}".format(f0, f1, H))
 #res = minimize(objective, x0, bounds=(array([0.0, 100.0]),array([0.0, 100.0]),array([0.0, 20.0])), method='SLSQP', jac='2-point', options={'eps': 1e-3,'finite_diff_rel_step':1e-3}, tol=1e-4)
-res = minimize(objective, x0, bounds=(array([0.0, 100.0]),array([0.0, 100.0]),array([0.0, 20.0])), method='SLSQP', jac=jacobian, tol=1e-5, options={'disp':True})
+res = minimize(objective, x0, bounds=(array([0.0, 100.0]),array([0.0, 100.0]),array([0.0, 20.0])), method='SLSQP', jac=jacobian, tol=1e-8, options={'disp':True})
 
 print("Done... found f0,f1,H={})".format(res.x))
 print(res)
 
 current = read_solution_file('temp.bin')
-plot(current['x'][::10], current['v'][::10], 'k.')
-plot(target['x'], target['v'], 'r-')
-show()
-plot(current['x'][::10], current['T'][::10], 'k.')
-plot(target['x'], target['T'], 'r-')
-show()
-plot(current['x'][::10], current['M'][::10], 'k.')
-plot(target['x'], target['M'], 'r-')
-show()
+fig = plt.figure(figsize=(14,4))
+axes0,axes1,axes2 = fig.subplots(1,3)
+
+markersize = 3.0
+axes0.plot(target['x'], target['v'], color='goldenrod', label="Optimiser Sol.", linewidth=2.0)
+axes0.plot(current['x'][::10], current['v'][::10], color='black', linestyle='None', marker='o', markerfacecolor="None", markersize=markersize, label="Reference Sol.")
+axes0.set_xlabel("x (m)")
+axes0.set_title("Velocity (m/s)")
+axes0.grid()
+axes0.legend(framealpha=1.0)
+
+axes1.plot(target['x'], target['T'], 'r-', linewidth=2.0)
+axes1.plot(current['x'][::10], current['T'][::10],color='black', linestyle='None', marker='o',  markerfacecolor="None", markersize=markersize)
+axes1.set_xlabel("x (m)")
+axes1.set_title("Temperature (K)")
+axes1.grid()
+
+axes2.plot(target['x'], target['M'], color='cyan', linewidth=2.0)
+axes2.plot(current['x'][::10], current['M'][::10],color='black', linestyle='None', marker='o', markerfacecolor="None", markersize=markersize)
+axes2.set_xlabel("x (m)")
+axes2.set_title("Mach Number (M)")
+axes2.grid()
+
+plt.tight_layout()
+plt.show()
