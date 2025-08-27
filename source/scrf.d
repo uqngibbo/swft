@@ -19,6 +19,7 @@ import std.math;
 import std.format;
 import std.string;
 import std.conv;
+import std.typecons: Tuple;
 
 // scrf specific modules
 import io;
@@ -85,6 +86,50 @@ double interpolate(double[] xi, double[] Ai, double x){
     return A;
 }
 
+Tuple!(size_t, size_t) get_bracketing_indices(double[] xi, double x){
+    size_t n = xi.length;
+
+    size_t l = 0;
+    size_t m = n/2;
+    size_t u = n-1;
+    double xl = xi[l]; double xm = xi[m]; double xu = xi[u];
+    if (x<xi[0]) throw new Error("x is more negative than xi[0]");
+    if (x>xi[$-1]) throw new Error("x is more positive than xi[$-1]");
+
+    while (true) {
+        if ((u-l)==1) break;
+        if (x>xm) {
+            l = m;
+        } else if (x<=m) {
+            u = m;
+        } else {
+            throw new Error("Bad binary search logic sorry.");
+        }
+        m = (l+u)/2;
+        xl = xi[l]; xm = xi[m]; xu = xi[u];
+    }
+    return Tuple!(size_t, size_t)(l, u);
+}
+
+double calc_dfdfi(double[] xf, double xj, size_t i){
+
+    if (xf.length<2) throw new Error("xf has not enough entries in it");
+    if (i>=xf.length) throw new Error(format("Bad node index %d given for xf of size %d",
+                                             i, xf.length));
+
+    Tuple!(size_t, size_t) indexes = get_bracketing_indices(xf, xj);
+    size_t l = indexes[0];
+    size_t u = indexes[1];
+
+    if (i==l){
+        // Is it always safe to +1 here? I think it is
+        return 1.0 - (xj-xf[i])/(xf[i+1] - xf[i]);
+    } else if (i==u){
+        return (xj-xf[i-1])/(xf[i] - xf[i-1]);
+    } else {
+        return 0.0;
+    }
+}
 
 
 Primitives increment_primitives(double x, double A, double dx, double dA, double Hdot, double f, ref Primitives P0, ref GasModel gm, ref GasState gs){
@@ -161,8 +206,7 @@ int main(string[] args)
 
     print_state("Init", v0, M, As, gs, gm);
 
-    SimData[] fderivs_lower;
-    SimData[] fderivs_upper;
+    SimData[][] fderivs;
     SimData[] Hderivs;
 
     double[] xs;
@@ -177,8 +221,9 @@ int main(string[] args)
     Primitives P0 = Primitives(gs.rho.re, gs.p.re, v0, gs.u.re);
     
     Primitives[][] dPkdfj; // dUdf at each point (x)
-    Primitives dPdfl;     // dUdf at each f schedule control point
-    Primitives dPdfu;     // dUdf at each f schedule control point
+    Primitives[] dPdfs;     // dUdf at each f schedule control point
+    fderivs.length = cfg.f.length;
+    dPdfs.length = cfg.f.length;
 
     Primitives dPdH0 = Primitives(0.0, 0.0, 0.0, 0.0);
     Primitives dPdH;
@@ -186,8 +231,9 @@ int main(string[] args)
     simdata ~= SimData(P0.p, gs.T.re, P0.rho, As, P0.v, M, gamma);
     xs ~= x0;
     if (cfg.calc_derivatives) {
-        fderivs_lower~= SimData(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
-        fderivs_upper~= SimData(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+        foreach(i; 0 .. cfg.f.length){
+            fderivs[i] ~= SimData(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+        }
         Hderivs~= SimData(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
         dPkdfj.length=1;
     }
@@ -213,16 +259,14 @@ int main(string[] args)
         if (cfg.calc_derivatives) {
 
             Primitives[] dP1dfj;
-            f_derivative_nonuniform(P0, P1, dPkdfj[iter],f, dA, dP1dfj,
-                                    A, A1, dx, gs, gm);
-            dPdfu = Primitives(0.0, 0.0, 0.0, 0.0);
-            dPdfl = Primitives(0.0, 0.0, 0.0, 0.0);
-            foreach(j, dP1df_x; dP1dfj){
-                double xj = xs[j];
-                double dfdfl = 1.0 - (xj-cfg.xf[0])/(cfg.xf[$-1] - cfg.xf[0]);
-                double dfdfu =       (xj-cfg.xf[0])/(cfg.xf[$-1] - cfg.xf[0]);
-                dPdfl += dP1df_x*dfdfl;
-                dPdfu += dP1df_x*dfdfu;
+            f_derivative_nonuniform(P0, P1, dPkdfj[iter],f, dA, dP1dfj, A, A1, dx, gs, gm);
+            foreach(i; 0 .. cfg.f.length){
+                dPdfs[i] = Primitives(0.0, 0.0, 0.0, 0.0);
+                foreach(j, dP1df_x; dP1dfj){
+                    double xj = xs[j];
+                    double dfdfi =  calc_dfdfi(cfg.xf, xj, i);
+                    dPdfs[i] += dP1df_x*dfdfi;
+                }
             }
             dPkdfj ~= dP1dfj;
             dPdH = H_derivative(P0, P1, dPdH0, f, Hdot, dA, A, A1, dx, gs2, gm);
@@ -244,21 +288,16 @@ int main(string[] args)
         xs ~= x;
         P0 = P1;
 
- 
-
         if (cfg.calc_derivatives){
             // Custom constructor that autodiffs the T and M maybe?
             // TODO: Get this outta here.... I think the derivatives deserve their own
             // datastructure.
-            double dTdfl= dPdfl.u/cv;
-            double dadfl= 0.5*sqrt(gamma*R/gs.T.re)*dTdfl;
-            double dMdfl= (gs.a.re*dPdfl.v - P1.v*dadfl)/gs.a.re/gs.a.re;
-            fderivs_lower ~= SimData(dPdfl.p, dTdfl, dPdfl.rho, 0.0, dPdfl.v, dMdfl, 0.0);
-
-            double dTdfu = dPdfu.u/cv;
-            double dadfu = 0.5*sqrt(gamma*R/gs.T.re)*dTdfu;
-            double dMdfu = (gs.a.re*dPdfu.v - P1.v*dadfu)/gs.a.re/gs.a.re;
-            fderivs_upper ~= SimData(dPdfu.p, dTdfu, dPdfu.rho, 0.0, dPdfu.v, dMdfu, 0.0);
+            foreach(i; 0 .. cfg.f.length){
+                double dTdfi = dPdfs[i].u/cv;
+                double dadfi = 0.5*sqrt(gamma*R/gs.T.re)*dTdfi;
+                double dMdfi= (gs.a.re*dPdfs[i].v - P1.v*dadfi)/gs.a.re/gs.a.re;
+                fderivs[i] ~= SimData(dPdfs[i].p, dTdfi, dPdfs[i].rho, 0.0, dPdfs[i].v, dMdfi, 0.0);
+            }
 
             double dTdH = dPdH.u/cv;
             double dadH = 0.5*sqrt(gamma*R/gs.T.re)*dTdH;
@@ -283,13 +322,11 @@ int main(string[] args)
 
     if (cfg.calc_derivatives) {
         string derivs_file_name;
-        derivs_file_name = format("fderivs_%04d-%s.bin", 0, config_file_name.chomp(".yaml"));
-        writefln("Writing derivs to file %s...", derivs_file_name);
-        write_solution_to_file(xs, fderivs_lower, derivs_file_name);
-
-        derivs_file_name = format("fderivs_%04d-%s.bin", 1, config_file_name.chomp(".yaml"));
-        writefln("Writing derivs to file %s...", derivs_file_name);
-        write_solution_to_file(xs, fderivs_upper, derivs_file_name);
+        foreach(i; 0 .. cfg.f.length){
+            derivs_file_name = format("fderivs_%04d-%s.bin", i, config_file_name.chomp(".yaml"));
+            writefln("Writing derivs to file %s...", derivs_file_name);
+            write_solution_to_file(xs, fderivs[i], derivs_file_name);
+        }
 
         derivs_file_name = format("Hderivs-%s.bin", config_file_name.chomp(".yaml"));
         writefln("Writing derivs to file %s...", derivs_file_name);
