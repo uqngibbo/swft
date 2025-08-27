@@ -76,15 +76,10 @@ def jacobian(x):
     interped_v = interp(current['x'])
     current_v = current['v']
 
-    fderivs = read_solution_file("fderivs-temp.bin")
-    fderivs_v = fderivs['v']
-    x0 = current['x'][0]
-    x1 = current['x'][-1]
-    dfdf0 = 1.0 - (current['x'] - x0)/(x1-x0)
-    dfdf1 = (current['x'] - x0)/(x1-x0)
-
-    Jf0 = 2.0/n*((current_v-interped_v)*fderivs_v*dfdf0*f_ref).sum()
-    Jf1 = 2.0/n*((current_v-interped_v)*fderivs_v*dfdf1*f_ref).sum()
+    fderivs0 = read_solution_file("fderivs_0000-temp.bin")
+    fderivs1 = read_solution_file("fderivs_0001-temp.bin")
+    Jf0 = 2.0/n*((current_v-interped_v)*fderivs0['v']*f_ref).sum()
+    Jf1 = 2.0/n*((current_v-interped_v)*fderivs1['v']*f_ref).sum()
 
     Hderivs = read_solution_file("Hderivs-temp.bin")
     Hderivs_v = Hderivs['v']
@@ -95,34 +90,37 @@ def jacobian(x):
 
 target = read_solution_file('combined.bin')
 
-f0 = 1.0
-H = 5.0
-#for f in [0.001, 0.002, 0.003, 0.004, 0.005, 0.006, 0.007, 0.008, 0.009, 0.010]: 
-for f1 in arange(1.0, 10.0, 1.0): 
-    out1 = objective(array([f0, f1+1e-3, H]))
-    out0 = objective(array([f0, f1, H]))
-    deriv = (out1-out0)/1e-3
-    jac = jacobian(array([f0, f1, H]))
-
-    print("Out1 {} out0 {}".format(out1, out0))
-    print("deriv {}".format(deriv))
-    print("jac   {}".format(jac[1]))
-
-#f0= 2.0
-#f1= 6.0
+#f0 = 1.0
 #H = 5.0
-#x0 = array([f0, f1, H])
-#print("Starting with f=[{:5.5f},{:5.5f}] H={:5.5e}".format(f0, f1, H))
-##res = minimize(objective, x0, bounds=(array([0.0, 100.0]),array([0.0, 100.0]),array([0.0, 20.0])), method='SLSQP', jac='2-point', options={'eps': 1e-3,'finite_diff_rel_step':1e-3}, tol=1e-4)
-#res = minimize(objective, x0, bounds=(array([0.0, 100.0]),array([0.0, 100.0]),array([0.0, 20.0])), method='SLSQP', jac=jacobian, tol=1e-5, options={'disp':True})
+##for f in [0.001, 0.002, 0.003, 0.004, 0.005, 0.006, 0.007, 0.008, 0.009, 0.010]: 
+#for f1 in arange(1.0, 10.0, 1.0): 
+#    out1 = objective(array([f0+1e-3, f1, H]))
+#    out0 = objective(array([f0, f1, H]))
+#    deriv = (out1-out0)/1e-3
+#    jac = jacobian(array([f0, f1, H]))
 #
-#print("Done... found f0,f1,H={})".format(res.x))
-#print(res)
-#
-#current = read_solution_file('temp.bin')
-#plot(current['x'][::10], current['v'][::10], 'k.')
-#plot(target['x'], target['v'], 'r-')
-#show()
-#plot(current['x'][::10], current['T'][::10], 'k.')
-#plot(target['x'], target['T'], 'r-')
-#show()
+#    print("Out1 {} out0 {}".format(out1, out0))
+#    print("deriv {}".format(deriv))
+#    print("jac   {}".format(jac[0]))
+
+f0= 2.0
+f1= 4.0
+H = 7.0
+x0 = array([f0, f1, H])
+print("Starting with f=[{:5.5f},{:5.5f}] H={:5.5e}".format(f0, f1, H))
+#res = minimize(objective, x0, bounds=(array([0.0, 100.0]),array([0.0, 100.0]),array([0.0, 20.0])), method='SLSQP', jac='2-point', options={'eps': 1e-3,'finite_diff_rel_step':1e-3}, tol=1e-4)
+res = minimize(objective, x0, bounds=(array([0.0, 100.0]),array([0.0, 100.0]),array([0.0, 20.0])), method='SLSQP', jac=jacobian, tol=1e-5, options={'disp':True})
+
+print("Done... found f0,f1,H={})".format(res.x))
+print(res)
+
+current = read_solution_file('temp.bin')
+plot(current['x'][::10], current['v'][::10], 'k.')
+plot(target['x'], target['v'], 'r-')
+show()
+plot(current['x'][::10], current['T'][::10], 'k.')
+plot(target['x'], target['T'], 'r-')
+show()
+plot(current['x'][::10], current['M'][::10], 'k.')
+plot(target['x'], target['M'], 'r-')
+show()
