@@ -185,7 +185,6 @@ int main(string[] args)
 
     GasModel gm = init_gas_model(cfg.gas_file_name);
     GasState gs = GasState(gm);
-    GasState gs2= GasState(gm);
 
     gs.p = cfg.p0;
     gs.T = cfg.T0;
@@ -269,7 +268,7 @@ int main(string[] args)
                 }
             }
             dPkdfj ~= dP1dfj;
-            dPdH = H_derivative(P0, P1, dPdH0, f, Hdot, dA, A, A1, dx, gs2, gm);
+            dPdH = H_derivative(P0, P1, dPdH0, f, Hdot, dA, A, A1, dx, gs, gm);
         }
 
         // Add the increments
