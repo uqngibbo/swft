@@ -1,5 +1,5 @@
 /*
-    scrf: A one-dimensional scramjet modelling code.
+    swft: A one-dimensional scramjet modelling code.
 
     References:
 
@@ -12,7 +12,7 @@
     @author: Nick Gibbons
 */
 
-module scrf;
+module swft;
 
 import std.stdio;
 import std.math;
@@ -21,7 +21,7 @@ import std.string;
 import std.conv;
 import std.typecons: Tuple;
 
-// scrf specific modules
+// swft specific modules
 import io;
 import derivatives;
 
@@ -177,9 +177,9 @@ Primitives increment_primitives(double x, double A, double dx, double dA, double
 int main(string[] args)
 {
     int exitFlag = 0;
-    writefln("scrf: A Q1D Flow Analysis Tool");
+    writefln("swft: A Q1D Flow Analysis Tool");
 
-    string config_file_name = "scrf.yaml";
+    string config_file_name = "swft.yaml";
     if (args.length>1) config_file_name = args[1];
     Config cfg = Config(config_file_name);
 

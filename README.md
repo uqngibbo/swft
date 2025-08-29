@@ -1,6 +1,6 @@
-# scrf -- A Q1D supersonic flowpath analysis code
+# swft -- A Q1D supersonic flowpath analysis code
 
-scrf is a quasi-onedimensional compressible flow code for analysing supersonic flowpaths. It is written in the D programming language and relies on the Gasdynamic Toolkit (GDTk).
+swft is a quasi-onedimensional compressible flow code for analysing supersonic flowpaths. It is written in the D programming language and relies on the Gasdynamic Toolkit (GDTk).
 
 ## Build Instructions
 Install dependancies:
@@ -21,8 +21,8 @@ Clone the GDTk repository:
 
 Build the code:
 
-    git clone git@github.com:uqngibbo/scrf.git
-    cd scrf/source
+    git clone git@github.com:uqngibbo/swft.git
+    cd swft/source
     make install
 
 ## Author:
