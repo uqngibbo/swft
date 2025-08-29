@@ -1,4 +1,4 @@
-// io.d: reading and writing and storage for edict
+// io.d: reading and writing and storage for swft
 // @author: NNG
 
 module io;

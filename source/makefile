@@ -1,4 +1,4 @@
-# makefile for scrf
+# makefile for swft
 # NNG 2025-08-08, UQ
 
 DMD ?= ldc2
@@ -8,7 +8,7 @@ DMD ?= ldc2
 FLAVOUR ?= debug
 PLATFORM ?= linux
 
-PROGRAMS := scrf
+PROGRAMS := swft
 
 SCRF_FILES := io.d derivatives.d
 
@@ -127,12 +127,12 @@ endif
 
 default: $(PROGRAMS) $(SCRF_FILES)
 	@echo "Source code revision string $(REVISION_STRING)"
-	@echo "scrf code built."
+	@echo "swft code built."
 
 install: $(PROGRAMS)
 	- mkdir -p $(BUILD_DIR)/bin
 	- mkdir -p $(BUILD_DIR)/lib
-	- cp scrf $(BUILD_DIR)/bin
+	- cp swft $(BUILD_DIR)/bin
 	cp $(LUA_DIR)/install/bin/* $(BUILD_DIR)/bin
 	cp $(LUA_DIR)/install/lib/lpeg.so $(BUILD_DIR)/lib
 	cp -r $(DGD_REPO)/src/lib/* $(BUILD_DIR)/lib
@@ -160,14 +160,14 @@ $(LIBGASF):
 $(LIBCEQ):
 	cd $(CEQ_DIR); make
 
-scrf: scrf.d $(SCRF_FILES) \
+swft: swft.d $(SCRF_FILES) \
 	$(DYAML_FILES) $(TINYENDIAN_FILES) \
 	$(GAS_FILES) $(CEQ_SRC_FILES) $(LIBCEQ) $(LIBGASF) $(LIBLUA) $(GZIP_FILES) \
 	$(KINETICS_FILES) $(GAS_LUA_FILES) $(KINETICS_LUA_FILES) \
 	$(NM_FILES) $(UTIL_FILES)
-	$(DMD) $(DFLAGS) $(OF)scrf \
+	$(DMD) $(DFLAGS) $(OF)swft \
 		$(DVERSION)complex_numbers \
-		scrf.d \
+		swft.d \
 		$(SCRF_FILES) $(DYAML_FILES) $(TINYENDIAN_FILES) \
 		$(GAS_FILES) $(CEQ_SRC_FILES) $(GZIP_FILES) \
 		$(UTIL_FILES) $(NM_FILES) \

@@ -1,5 +1,5 @@
 """
-Test code for scrf. This is the heat addition only test.
+Test code for swft. This is the heat addition only test.
 
 @author: Nick
 """
@@ -58,8 +58,8 @@ def read_solution_file(filename):
 
     return data
 
-def test_runscrf():
-    cmd = "scrf heat_addition.yaml"
+def test_runswft():
+    cmd = "swft heat_addition.yaml"
     proc = subprocess.run(cmd.split(), capture_output=True, text=True)
     assert proc.returncode == 0, "Failed cmd: "+cmd
 

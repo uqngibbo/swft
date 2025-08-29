@@ -1,5 +1,5 @@
 """
-Wrapper layer for testing the fitting of a scrf sim to CFD data.
+Wrapper layer for testing the fitting of a swft sim to CFD data.
 
 @author: Nick Gibbons
 """
@@ -37,7 +37,7 @@ def objective(x):
     with open('temp.yaml', 'w') as fp:
         fp.write(TEMPLATE.format(f, f, H))
 
-    cmd = "scrf temp.yaml"
+    cmd = "swft temp.yaml"
     proc = subprocess.run(cmd.split(), capture_output=True, text=True)
     assert proc.returncode == 0, "Failed cmd: "+cmd
 
@@ -61,7 +61,7 @@ def jacobian(x):
     with open('temp.yaml', 'w') as fp:
         fp.write(TEMPLATE.format(f, f, H))
 
-    cmd = "scrf temp.yaml"
+    cmd = "swft temp.yaml"
     proc = subprocess.run(cmd.split(), capture_output=True, text=True)
     assert proc.returncode == 0, "Failed cmd: "+cmd
 

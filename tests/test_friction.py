@@ -62,8 +62,8 @@ def read_solution_file(filename):
 
     return data
 
-def test_runscrf():
-    cmd = "scrf friction.yaml"
+def test_runswft():
+    cmd = "swft friction.yaml"
     proc = subprocess.run(cmd.split(), capture_output=True, text=True)
     assert proc.returncode == 0, "Failed cmd: "+cmd
 

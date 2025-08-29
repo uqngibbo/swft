@@ -1,5 +1,5 @@
 # config.yaml
-# Example config file for scrf scramjet calculator
+# Example config file for swft scramjet calculator
 # Nick Gibbons (2025-Aug)
 
 gas_file_name: "gm.lua"           # GDTk gas model file

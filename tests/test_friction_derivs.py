@@ -61,21 +61,21 @@ def get_L2_norms(dUdf_fd, dUdf):
     L2['v']   = sqrt(((dUdf_fd['v']-dUdf['v'])**2).sum()/n)
     return L2
 
-def test_runscrf():
+def test_runswft():
     xf= [0.0, 1.0]
     f = [0.005, 0.005]
     f2= [0.005001, 0.005]
     with open('baseline.yaml', 'w') as fp:
         fp.write(TEMPLATE.format(xf, f, "true"))
 
-    cmd = "scrf baseline.yaml"
+    cmd = "swft baseline.yaml"
     proc = subprocess.run(cmd.split(), capture_output=True, text=True)
     assert proc.returncode == 0, "Failed cmd: "+cmd
 
     with open('perturbed.yaml', 'w') as fp:
         fp.write(TEMPLATE.format(xf, f2, "false"))
 
-    cmd = "scrf perturbed.yaml"
+    cmd = "swft perturbed.yaml"
     proc = subprocess.run(cmd.split(), capture_output=True, text=True)
     assert proc.returncode == 0, "Failed cmd: "+cmd
 
@@ -106,7 +106,7 @@ def test_cleanup():
 
 
 if __name__=='__main__':
-    test_runscrf()
+    test_runswft()
     data0, data1, dUdfl, dUdfu = read_derivs('baseline', 'perturbed')
 
     df = 1e-6

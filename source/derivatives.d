@@ -1,5 +1,5 @@
 /*
-    Module for flowfield derivative calculations in scrf
+    Module for flowfield derivative calculations in swft
 
     @author: Nick Gibbons
 */

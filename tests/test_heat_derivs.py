@@ -43,12 +43,12 @@ def get_L2_norms(dUdH_fd, dUdH):
     L2['v']   = sqrt(((dUdH_fd['v']  -dUdH['v'])**2).sum()/n)
     return L2
 
-def test_runscrf():
-    cmd = "scrf heat_addition.yaml"
+def test_runswft():
+    cmd = "swft heat_addition.yaml"
     proc = subprocess.run(cmd.split(), capture_output=True, text=True)
     assert proc.returncode == 0, "Failed cmd: "+cmd
 
-    cmd = "scrf perturb_heat_addition.yaml"
+    cmd = "swft perturb_heat_addition.yaml"
     proc = subprocess.run(cmd.split(), capture_output=True, text=True)
     assert proc.returncode == 0, "Failed cmd: "+cmd
 
