@@ -22,6 +22,8 @@ struct Config {
     double[] f;
     double dt;
     double Hdot;
+    double CH=0.0;
+    double Tw=300.0;
     double T0;
     double p0;
     double v0;
@@ -55,6 +57,8 @@ struct Config {
         if ("calc_derivatives" in data) {
             calc_derivatives = to!bool(data["calc_derivatives"].as!string);
         }
+        if ("CH" in data) CH = to!double(data["CH"].as!string);
+        if ("Tw" in data) Tw = to!double(data["Tw"].as!string);
 
         if (dt<=0.0) throw new Error("timestep size dt is non-positive");
         if (xi.length!=Ai.length) throw new Error("xi.length does not match Ai.length");

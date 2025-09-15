@@ -132,7 +132,7 @@ double calc_dfdfi(double[] xf, double xj, size_t i){
 }
 
 
-Primitives increment_primitives(double x, double A, double dx, double dA, double Hdot, double f, ref Primitives P0, ref GasModel gm, ref GasState gs){
+Primitives increment_primitives(double x, double A, double dx, double dA, double Hdot, double CH, double uw, double f, ref Primitives P0, ref GasModel gm, ref GasState gs){
     double rho = P0.rho;
     double p = P0.p;
     double v = P0.v;
@@ -147,6 +147,7 @@ Primitives increment_primitives(double x, double A, double dx, double dA, double
     double cv = gm.dudT_const_v(gs).re;
     double dfdr = R*gs.T.re;
     double dfdu = gs.rho.re*R/cv;
+    double r = sqrt(0.71); // Recovery Factor
 
     // Friction factor
     double diameter = sqrt(4.0*A/PI);
@@ -154,7 +155,8 @@ Primitives increment_primitives(double x, double A, double dx, double dA, double
     double taupiDdx = tau*PI*diameter*dx;
 
     // Rayleigh heat addition (I did this derivation at 2330)
-    double Qdot = Hdot*A*dx;
+    //double Qdot = Hdot*A*dx;
+    double Qdot = Hdot*A*dx + rho*v*CH*(u + r*v*v/2.0 - uw)*dx;
 
     // Compute the accommodation increments using expressions from Maxima.
     // We get slightly different dp_chems to nenzf1d. I wonder why?
@@ -202,6 +204,8 @@ int main(string[] args)
     double dt = cfg.dt;
     double As = interpolate(cfg.xi, cfg.Ai, x0);
     double Hdot = cfg.Hdot; // Volumetric heat addition rate W/m3
+    double uw = cfg.Tw*cv;
+    double CH = cfg.CH;
 
     print_state("Init", v0, M, As, gs, gm);
 
@@ -254,7 +258,7 @@ int main(string[] args)
         double A1 = interpolate(cfg.xi, cfg.Ai, x1);
         double dA = A1-A;
 
-        Primitives P1 = increment_primitives(x, A, dx, dA, Hdot, f, P0, gm, gs);
+        Primitives P1 = increment_primitives(x, A, dx, dA, Hdot, CH, uw, f, P0, gm, gs);
         if (cfg.calc_derivatives) {
 
             Primitives[] dP1dfj;
