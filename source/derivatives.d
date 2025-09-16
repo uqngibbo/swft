@@ -56,18 +56,18 @@ void f_derivative_nonuniform(Primitives P0, Primitives P1, ref const Primitives[
     size_t nj = dP0dfj.length;
     foreach(j; 0 .. nj){
         // Oh God. Yeah.
-		double dr0dfj= dP0dfj[j].rho;
-		double dv0dfj= dP0dfj[j].v;
-		double dp0dfj= dP0dfj[j].p;
-		double du0dfj= dP0dfj[j].u;
+        double dr0dfj= dP0dfj[j].rho;
+        double dv0dfj= dP0dfj[j].v;
+        double dp0dfj= dP0dfj[j].p;
+        double du0dfj= dP0dfj[j].u;
 
-		double rhs0 = A0*dr0dfj*v0+A0*dv0dfj*rho0;
-		double rhs1 = -((2*c*dr0dfj*f-2*A0*dr0dfj)*v0^^2+(4*c*dv0dfj*f-4*A0*dv0dfj)*rho0*v0
-										  +((-dA)-2*A0)*dp0dfj)/2;
-		double rhs2 = (A0*dr0dfj*v0^^3+3*A0*dv0dfj*rho0*v0^^2
-						+(2*A0*dr0dfj*u0+2*A0*du0dfj*rho0+2*A0*dp0dfj)*v0
-						+2*A0*dv0dfj*rho0*u0+2*A0*dv0dfj*p0)/2;
-		double rhs3 = 0.0;
+        double rhs0 = A0*dr0dfj*v0+A0*dv0dfj*rho0;
+        double rhs1 = -((2*c*dr0dfj*f-2*A0*dr0dfj)*v0^^2+(4*c*dv0dfj*f-4*A0*dv0dfj)*rho0*v0
+                                          +((-dA)-2*A0)*dp0dfj)/2;
+        double rhs2 = (A0*dr0dfj*v0^^3+3*A0*dv0dfj*rho0*v0^^2
+                        +(2*A0*dr0dfj*u0+2*A0*du0dfj*rho0+2*A0*dp0dfj)*v0
+                        +2*A0*dv0dfj*rho0*u0+2*A0*dv0dfj*p0)/2;
+        double rhs3 = 0.0;
 
         double dr1dfj = ((3*R*dA+8*A*cv+2*A*R)*rho*rhs0*v^^2+((-4*A*cv)-4*A*R)*rho*rhs1*v
                                           +(2*R*dA-4*A*R)*rho*rhs0*u
@@ -76,9 +76,9 @@ void f_derivative_nonuniform(Primitives P0, Primitives P1, ref const Primitives[
              /((2*A*R*dA+4*A^^2*cv)*rho*v^^3+((2*A*R*dA-4*A^^2*R)*rho*u+(2*A*R*dA-4*A^^2*R)*p)
                                               *v);
 
-		double dv1dfj = -((R*dA+4*A*cv+2*A*R)*rhs0*v^^2+((-4*A*cv)-4*A*R)*rhs1*v+(4*A*R-2*R*dA)
-																	   *rhs2)
-		 /((2*A*R*dA+4*A^^2*cv)*rho*v^^2+(2*A*R*dA-4*A^^2*R)*rho*u+(2*A*R*dA-4*A^^2*R)*p);
+        double dv1dfj = -((R*dA+4*A*cv+2*A*R)*rhs0*v^^2+((-4*A*cv)-4*A*R)*rhs1*v+(4*A*R-2*R*dA)
+                                                                       *rhs2)
+         /((2*A*R*dA+4*A^^2*cv)*rho*v^^2+(2*A*R*dA-4*A^^2*R)*rho*u+(2*A*R*dA-4*A^^2*R)*p);
 
         double dp1dfj = (R*rho*rhs0*v^^3-2*R*rho*rhs1*v^^2
                               +(2*R*rho*rhs0*u+2*R*rho*rhs2+2*R*p*rhs0)*v
@@ -96,7 +96,7 @@ void f_derivative_nonuniform(Primitives P0, Primitives P1, ref const Primitives[
                                          *v);
 
         dP1dfj ~= Primitives(dr1dfj, dp1dfj, dv1dfj, du1dfj);
-	}
+    }
 
     // Okay so this is derivative of the current batch of primitves w.r.t to the
     // friction f in THIS cell, assuming that all of the other f's are zero
@@ -107,7 +107,7 @@ void f_derivative_nonuniform(Primitives P0, Primitives P1, ref const Primitives[
     double du1df0 = ((2*c*cv*rho*rho0*v^^2-2*R*c*rho*rho0*u+2*c*cv*p*rho0)*v0^^2)
                     /((R*dA+2*A*cv)*rho^^2*v^^2+(R*dA-2*A*R)*rho^^2*u+(R*dA-2*A*R)*p*rho);
 
-	dP1dfj ~= Primitives(dr1df0, dp1df0, dv1df0, du1df0);
+    dP1dfj ~= Primitives(dr1df0, dp1df0, dv1df0, du1df0);
     // THis is messed up on the second time for some reason.
 }
 

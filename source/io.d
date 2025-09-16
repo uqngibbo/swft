@@ -72,11 +72,11 @@ struct Primitives {
     double rho,p,v,u;
 
     Primitives opBinary(string op)(in Primitives rhs) if ( op == "+" || op == "-" || op == "*" || op == "/"  ) {
-		return mixin("Primitives(rho"~op~"rhs.rho, p"~op~"rhs.p, v"~op~"rhs.v, u"~op~"rhs.u)");
+        return mixin("Primitives(rho"~op~"rhs.rho, p"~op~"rhs.p, v"~op~"rhs.v, u"~op~"rhs.u)");
     }
 
     Primitives opBinary(string op)(in double rhs) if ( op == "+" || op == "-" || op == "*" || op == "/"  ) {
-		return mixin("Primitives(rho"~op~"rhs, p"~op~"rhs, v"~op~"rhs, u"~op~"rhs)");
+        return mixin("Primitives(rho"~op~"rhs, p"~op~"rhs, v"~op~"rhs, u"~op~"rhs)");
     }
 
     void opOpAssign(string op: "+")(in Primitives rhs) {
