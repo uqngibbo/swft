@@ -10,7 +10,7 @@ Install dependancies:
 Install the LLVM D compiler:
 
     wget https://github.com/ldc-developers/ldc/releases/download/v1.40.1/ldc2-1.40.1-linux-x86_64.tar.xz
-    tar -xvf ldc2-1.41.1-linux-x86_64.tar.xz
+    tar -xvf ldc2-1.40.1-linux-x86_64.tar.xz
     echo 'export PATH=${PATH}:${HOME}/ldc2-1.40.1-linux-x86_64/bin' >> .bashrc
     echo 'export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${HOME}/ldc2-1.40.1-linux-x86_64/lib' >> .bashrc
 
