@@ -192,40 +192,40 @@ Primitives f_derivative(Primitives P1, Primitives P2, Primitives dP1df, double f
     return Primitives(drdf, dpdf, dvdf, dudf);
 }
 
-Primitives H_derivative(Primitives P1, Primitives P2, Primitives dP1dH, double f,
-         double Hdot, double dA,  double A1, double A2, double dx, GasState gs, GasModel gm){
-    double rho = P2.rho;
-    double p = P2.p;
-    double v = P2.v;
-    double u = P2.u;
+Primitives H_derivative(Primitives P0, Primitives P1, Primitives dP0dH, double f,
+         double Hdot, double dA,  double A0, double A1, double dx, GasState gs, GasModel gm){
+    double rho = P1.rho;
+    double p = P1.p;
+    double v = P1.v;
+    double u = P1.u;
 
-    double rho1 = P1.rho;
-    double p1 = P1.p;
-    double v1 = P1.v;
-    double u1 = P1.u;
+    double rho0 = P0.rho;
+    double p0 = P0.p;
+    double v0 = P0.v;
+    double u0 = P0.u;
 
     gs.u = u;
     gs.rho = rho;
     gs.p = p;
     gs.T = temp_from_u(gs, gm);
 
-    double diameter = sqrt(4.0*A1/PI);
+    double diameter = sqrt(4.0*A0/PI);
     double c = 1.0/8.0*PI*diameter*dx;
 
     double cv = gm.dudT_const_v(gs).re;
     double R = gm.gas_constant(gs).re;
-    double A = A2;
+    double A = A1;
 
-    double dr1dH = dP1dH.rho;
-    double dv1dH = dP1dH.v;
-    double dp1dH = dP1dH.p;
-    double du1dH = dP1dH.u;
+    double dr0dH = dP0dH.rho;
+    double dv0dH = dP0dH.v;
+    double dp0dH = dP0dH.p;
+    double du0dH = dP0dH.u;
 
-    double rhs0 = A1*dr1dH*v1+A1*dv1dH*rho1;
-    double rhs1 = dr1dH*(A1*v1^^2-c*f*v1^^2)+dv1dH*(2*A1*rho1*v1-2*c*f*rho1*v1)
-                                       +(dA/2+A1)*dp1dH;
-    double rhs2 = dv1dH*(A1*rho1*v1^^2+A1*rho1*(v1^^2/2+u1)+A1*p1)
-                  +A1*dr1dH*v1*(v1^^2/2+u1)+A1*du1dH*rho1*v1+A1*dp1dH*v1+A1*dx;
+    double rhs0 = A0*dr0dH*v0+A0*dv0dH*rho0;
+    double rhs1 = dr0dH*(A0*v0^^2-c*f*v0^^2)+dv0dH*(2*A0*rho0*v0-2*c*f*rho0*v0)
+                                       +(dA/2+A0)*dp0dH;
+    double rhs2 = dv0dH*(A0*rho0*v0^^2+A0*rho0*(v0^^2/2+u0)+A0*p0)
+                  +A0*dr0dH*v0*(v0^^2/2+u0)+A0*du0dH*rho0*v0+A0*dp0dH*v0+A0*dx;
     double rhs3 = 0.0;
 
     double drdH = ((3*R*dA+8*A*cv+2*A*R)*rho*rhs0*v^^2
