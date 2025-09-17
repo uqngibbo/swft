@@ -156,7 +156,7 @@ Primitives increment_primitives(double x, double A, double dx, double dA, double
 
     // Rayleigh heat addition (I did this derivation at 2330)
     //double Qdot = Hdot*A*dx;
-    double Qdot = Hdot*A*dx + rho*v*CH*(u + r*v*v/2.0 - uw)*dx;
+    double Qdot = Hdot*A*dx - rho*v*CH*(u + r*v*v/2.0 - uw)*dx;
 
     // Compute the accommodation increments using expressions from Maxima.
     // We get slightly different dp_chems to nenzf1d. I wonder why?
