@@ -262,7 +262,7 @@ int main(string[] args)
         if (cfg.calc_derivatives) {
 
             Primitives[] dP1dfj;
-            f_derivative_nonuniform(P0, P1, dPkdfj[iter],f, dA, dP1dfj, A, A1, dx, gs, gm);
+            f_derivative_nonuniform(P0, P1, dPkdfj[iter],f, dA, dP1dfj, CH, uw, A, A1, dx, gs, gm);
             foreach(i; 0 .. cfg.f.length){
                 dPdfs[i] = Primitives(0.0, 0.0, 0.0, 0.0);
                 foreach(j, dP1df_x; dP1dfj){
