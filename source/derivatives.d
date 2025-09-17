@@ -119,7 +119,7 @@ void f_derivative_nonuniform(Primitives P0, Primitives P1, ref const Primitives[
 }
 
 Primitives H_derivative(Primitives P0, Primitives P1, Primitives dP0dH, double f,
-         double Hdot, double dA,  double A0, double A1, double dx, GasState gs, GasModel gm){
+         double Hdot, double CH, double uw, double dA,  double A0, double A1, double dx, GasState gs, GasModel gm){
     double rho = P1.rho;
     double p = P1.p;
     double v = P1.v;
@@ -134,6 +134,7 @@ Primitives H_derivative(Primitives P0, Primitives P1, Primitives dP0dH, double f
     gs.rho = rho;
     gs.p = p;
     gs.T = temp_from_u(gs, gm);
+    double r = sqrt(0.71); // TODO We could compute this from the gas model.
 
     double diameter = sqrt(4.0*A0/PI);
     double c = 1.0/8.0*PI*diameter*dx;
@@ -153,8 +154,11 @@ Primitives H_derivative(Primitives P0, Primitives P1, Primitives dP0dH, double f
                  dr0dH*(A0*v0^^2-c*f*v0^^2)+dv0dH*(2*A0*rho0*v0-2*c*f*rho0*v0)
                                          +(dA/2+A0)*dp0dH;
     double rhs2 =
-                 dv0dH*(A0*rho0*v0^^2+A0*rho0*(v0^^2/2+u0)+A0*p0)
-                  +A0*dr0dH*v0*(v0^^2/2+u0)+A0*du0dH*rho0*v0+A0*dp0dH*v0+A0*dx;
+                 dr0dH*(A0*v0*(v0^^2/2+u0)-CH*v0*((r*v0^^2)/2-uw+u0))
+                  +dv0dH*((-CH*rho0*((r*v0^^2)/2-uw+u0))
+                         -CH*r*rho0*v0^^2+A0*rho0*v0^^2+A0*rho0*(v0^^2/2+u0)
+                         +A0*p0)+du0dH*(A0*rho0*v0-CH*rho0*v0)+A0*dp0dH*v0
+                  +A0*dx;
     double rhs3 = 0.0;
 
     double drdH =

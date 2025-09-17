@@ -272,7 +272,7 @@ int main(string[] args)
                 }
             }
             dPkdfj ~= dP1dfj;
-            dPdH = H_derivative(P0, P1, dPdH0, f, Hdot, dA, A, A1, dx, gs, gm);
+            dPdH = H_derivative(P0, P1, dPdH0, f, Hdot, CH, uw, dA, A, A1, dx, gs, gm);
         }
 
         // Add the increments
