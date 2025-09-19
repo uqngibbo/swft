@@ -61,18 +61,18 @@ def get_L2_norms(dUdf_fd, dUdf):
     return L2
 
 def test_runswft():
-    xf= [0.0, 1.0]
-    f = [0.005, 0.005]
-    f2= [0.005001, 0.005]
-    with open('baseline.yaml', 'w') as fp:
-        fp.write(TEMPLATE.format(xf, f, "true"))
+    baseline = read_config_file('../examples/friction.yaml')
+    baseline['calc_derivatives'] = "true"
+    write_config_to_file(baseline, 'baseline.yaml')
 
     cmd = "swft baseline.yaml"
     proc = subprocess.run(cmd.split(), capture_output=True, text=True)
     assert proc.returncode == 0, "Failed cmd: "+cmd
 
-    with open('perturbed.yaml', 'w') as fp:
-        fp.write(TEMPLATE.format(xf, f2, "false"))
+    perturbed = {key:val for key,val in baseline.items()}
+    perturbed['calc_derivatives'] = "false"
+    perturbed['f'][0] += 1e-6
+    write_config_to_file(perturbed, 'perturbed.yaml')
 
     cmd = "swft perturbed.yaml"
     proc = subprocess.run(cmd.split(), capture_output=True, text=True)

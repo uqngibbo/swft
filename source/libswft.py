@@ -12,6 +12,12 @@ import yaml
 from sys import argv
 import matplotlib.pyplot as plt
 
+def write_config_to_file(cfg, filename):
+    # TODO CHeck valid fields
+    with open(filename, 'w') as fp:
+        for key,val in cfg.items():
+            fp.write('{}: {}\n'.format(key, val))
+
 def read_config_file(filename):
     """
     It's nice to have a little yaml file in each simulation directory, that stores
