@@ -5,11 +5,10 @@ Test code for swft. This is the heat addition only test.
 """
 
 from numpy import array, zeros, interp, frombuffer, array, concatenate, log, linspace, isclose
-import struct
-from io import BytesIO, BufferedWriter
 import matplotlib.pyplot as plt
 from scipy.optimize import brentq
 import subprocess
+from libswft import *
 
 # Rayleigh flow with heat addition
 def Tt_on_Ttstar(M, k):
@@ -27,39 +26,8 @@ def rho_on_rhostar(M, k):
 def v_on_vstar(M, k):
     return ((k+1)*M**2)/(1+k*M**2)
 
-def read_solution_file(filename):
-    with open(filename, 'rb') as fp:
-        bytes = fp.read()
-
-    stream = BytesIO(bytes)
-
-    buff = stream.read(8*2)
-    neq, N = struct.unpack("Q"*2, buff)
-
-    buff = stream.read(8*N); x     = frombuffer(buff)   
-    buff = stream.read(8*N); p     = frombuffer(buff)   
-    buff = stream.read(8*N); T     = frombuffer(buff)   
-    buff = stream.read(8*N); rho   = frombuffer(buff) 
-    buff = stream.read(8*N); A     = frombuffer(buff)   
-    buff = stream.read(8*N); v     = frombuffer(buff)   
-    buff = stream.read(8*N); M     = frombuffer(buff)   
-    buff = stream.read(8*N); gamma = frombuffer(buff)
-
-    data = {}
-    data['neq'] = neq; data['N'] = N;
-    data['x']     = x
-    data['p']     = p
-    data['T']     = T
-    data['rho']   = rho
-    data['A']     = A
-    data['v']     = v
-    data['M']     = M
-    data['gamma'] = gamma
-
-    return data
-
 def test_runswft():
-    cmd = "swft heat_addition.yaml"
+    cmd = "swft ../examples/heat_addition.yaml"
     proc = subprocess.run(cmd.split(), capture_output=True, text=True)
     assert proc.returncode == 0, "Failed cmd: "+cmd
 

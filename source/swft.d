@@ -181,6 +181,8 @@ int main(string[] args)
     if (args.length>1) config_file_name = args[1];
     Config cfg = Config(config_file_name);
 
+    // TODO: Use dirName here to allow for gas files being
+    // next to the input file
     GasModel gm = init_gas_model(cfg.gas_file_name);
     GasState gs = GasState(gm);
 

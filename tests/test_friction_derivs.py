@@ -5,12 +5,11 @@ Test code for swft, checking derivatives of the f distribution.
 """
 
 from numpy import array, zeros, interp, frombuffer, array, concatenate, log, linspace, isclose, sqrt
-import struct
 import matplotlib.pyplot as plt
 import subprocess
-from test_friction import read_solution_file
 import yaml
 from scipy.interpolate import interp1d
+from libswft import *
 
 TEMPLATE = """
 gas_file_name: "gm.lua"
