@@ -5,13 +5,10 @@ Test code for swft, checking actual heat transfer derivs.
 """
 
 from numpy import array, zeros, interp, frombuffer, array, concatenate, log, linspace, isclose, sqrt
-import struct
-from io import BytesIO, BufferedWriter
 import matplotlib.pyplot as plt
-from scipy.optimize import brentq
 import subprocess
-from test_friction import read_solution_file
 import yaml
+from libswft import *
 
 def read_cfg(filename):
     with open(filename) as fp:
@@ -21,11 +18,11 @@ def read_cfg(filename):
     return cfg
 
 def read_derivs():
-    name0 = 'convection'
+    name0 = 'baseline'
     cfg0  = read_cfg("{}.yaml".format(name0))
     data0= read_solution_file("{}.bin".format(name0))
 
-    name1 = 'perturb_convection'
+    name1 = 'perturbed'
     cfg1  = read_cfg("{}.yaml".format(name1))
     data1= read_solution_file("{}.bin".format(name1))
 
@@ -44,11 +41,20 @@ def get_L2_norms(dUdH_fd, dUdH):
     return L2
 
 def test_runswft():
-    cmd = "swft convection.yaml"
+    baseline = read_config_file('../examples/convection.yaml')
+    baseline['calc_derivatives'] = "true"
+    write_config_to_file(baseline, 'baseline.yaml')
+
+    cmd = "swft baseline.yaml"
     proc = subprocess.run(cmd.split(), capture_output=True, text=True)
     assert proc.returncode == 0, "Failed cmd: "+cmd
 
-    cmd = "swft perturb_convection.yaml"
+    perturbed = {key:val for key,val in baseline.items()}
+    perturbed['calc_derivatives'] = "false"
+    perturbed['CH'] *= 1.001
+    write_config_to_file(perturbed, 'perturbed.yaml')
+
+    cmd = "swft perturbed.yaml"
     proc = subprocess.run(cmd.split(), capture_output=True, text=True)
     assert proc.returncode == 0, "Failed cmd: "+cmd
 
@@ -56,16 +62,20 @@ def test_output():
     data0, dUdH_fd, dUdH = read_derivs()
     L2 = get_L2_norms(dUdH_fd, dUdH)
 
-    assert isclose(L2['rho'], 6.833e-08, 1e-4)
-    assert isclose(L2['p'], 0.44180, 1e-4)
-    assert isclose(L2['v'], 0.016138, 1e-4)
+    assert isclose(L2['rho'], 3.9188e-08, 1e-4)
+    assert isclose(L2['p'], 0.21764, 1e-4)
+    assert isclose(L2['v'], 0.00645, 1e-4)
 
 def test_cleanup():
-    cmd = "rm convection.bin perturb_convection.bin"
+    cmd = "rm baseline.bin perturbed.bin"
     proc = subprocess.run(cmd.split(), capture_output=True, text=True)
     assert proc.returncode == 0, "Failed cmd: "+cmd
 
-    cmd = "rm fderivs_0001-convection.bin fderivs_0000-convection.bin Hderivs-convection.bin CHderivs-convection.bin"
+    cmd = "rm Hderivs-baseline.bin fderivs_0000-baseline.bin fderivs_0001-baseline.bin CHderivs-baseline.bin"
+    proc = subprocess.run(cmd.split(), capture_output=True, text=True)
+    assert proc.returncode == 0, "Failed cmd: "+cmd
+
+    cmd = "rm baseline.yaml perturbed.yaml"
     proc = subprocess.run(cmd.split(), capture_output=True, text=True)
     assert proc.returncode == 0, "Failed cmd: "+cmd
 

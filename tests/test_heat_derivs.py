@@ -6,7 +6,6 @@ Test code for swft, checking heat transfer derivs.
 
 from numpy import array, zeros, interp, frombuffer, array, concatenate, log, linspace, isclose, sqrt
 import matplotlib.pyplot as plt
-from scipy.optimize import brentq
 import subprocess
 import yaml
 from libswft import *
@@ -58,14 +57,6 @@ def test_runswft():
     cmd = "swft perturbed.yaml"
     proc = subprocess.run(cmd.split(), capture_output=True, text=True)
     assert proc.returncode == 0, "Failed cmd: "+cmd
-
-    #cmd = "swft heat_addition.yaml"
-    #proc = subprocess.run(cmd.split(), capture_output=True, text=True)
-    #assert proc.returncode == 0, "Failed cmd: "+cmd
-
-    #cmd = "swft perturb_heat_addition.yaml"
-    #proc = subprocess.run(cmd.split(), capture_output=True, text=True)
-    #assert proc.returncode == 0, "Failed cmd: "+cmd
 
 def test_output():
     data0, dUdH_fd, dUdH = read_derivs()
