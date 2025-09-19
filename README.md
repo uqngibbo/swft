@@ -29,4 +29,5 @@ Build the code:
 Nick Gibbons (n.gibbons@uq.edu.au)
 
 ## License:
-This Code Should Not Be Used By Anyone Under Any Circumstances
+swft use is governed by the GNU General Public License 3. This is a copyleft license, which means that any code based on swft must also be made freely available under a similar license.
+See the file gpl.txt for further details.
