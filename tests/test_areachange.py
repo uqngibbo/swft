@@ -5,11 +5,10 @@ Test code for swft, checking basic Q1D area change
 """
 
 from numpy import array, zeros, interp, frombuffer, array, concatenate, isclose
-import struct
-from io import BytesIO, BufferedWriter
 import matplotlib.pyplot as plt
 from scipy.optimize import brentq
 import subprocess
+from libswft import *
 
 # Validate using steady-isentropic flow formulas from Frank White, Ch 9
 
@@ -39,39 +38,8 @@ def rho_on_rho0(M0, M, gamma):
     bot = (1.0 + (gamma-1)/2.0*M0**2)**(-1.0/(gamma-1))
     return top/bot
 
-def read_solution_file(filename):
-    with open(filename, 'rb') as fp:
-        bytes = fp.read()
-
-    stream = BytesIO(bytes)
-
-    buff = stream.read(8*2)
-    neq, N = struct.unpack("Q"*2, buff)
-
-    buff = stream.read(8*N); x     = frombuffer(buff)   
-    buff = stream.read(8*N); p     = frombuffer(buff)   
-    buff = stream.read(8*N); T     = frombuffer(buff)   
-    buff = stream.read(8*N); rho   = frombuffer(buff) 
-    buff = stream.read(8*N); A     = frombuffer(buff)   
-    buff = stream.read(8*N); v     = frombuffer(buff)   
-    buff = stream.read(8*N); M     = frombuffer(buff)   
-    buff = stream.read(8*N); gamma = frombuffer(buff)
-
-    data = {}
-    data['neq'] = neq; data['N'] = N;
-    data['x']     = x
-    data['p']     = p
-    data['T']     = T
-    data['rho']   = rho
-    data['A']     = A
-    data['v']     = v
-    data['M']     = M
-    data['gamma'] = gamma
-
-    return data
-
 def test_runswft():
-    cmd = "swft area_change.yaml"
+    cmd = "swft ../examples/area_change.yaml"
     proc = subprocess.run(cmd.split(), capture_output=True, text=True)
     assert proc.returncode == 0, "Failed cmd: "+cmd
 

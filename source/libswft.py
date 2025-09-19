@@ -60,31 +60,32 @@ def read_solution_file(filename):
 
     return data
 
-filename = argv[1]
-data = read_solution_file(filename)
+if __name__=='__main__':
+    filename = argv[1]
+    data = read_solution_file(filename)
 
-fig = plt.figure(figsize=(10,8))
-axes = fig.subplots(2,2)
+    fig = plt.figure(figsize=(10,8))
+    axes = fig.subplots(2,2)
 
-axes[0,0].plot(data['x'], data['T'], 'r-')
-axes[0,0].set_xlabel('x (m)')
-axes[0,0].set_ylabel('Temperature (K)')
-axes[0,0].grid()
+    axes[0,0].plot(data['x'], data['T'], 'r-')
+    axes[0,0].set_xlabel('x (m)')
+    axes[0,0].set_ylabel('Temperature (K)')
+    axes[0,0].grid()
 
-axes[0,1].plot(data['x'], data['rho'], 'g-')
-axes[0,1].set_xlabel('x (m)')
-axes[0,1].set_ylabel('density (kg/m3)')
-axes[0,1].grid()
+    axes[0,1].plot(data['x'], data['rho'], 'g-')
+    axes[0,1].set_xlabel('x (m)')
+    axes[0,1].set_ylabel('density (kg/m3)')
+    axes[0,1].grid()
 
-axes[1,0].plot(data['x'], data['M'], 'k-')
-axes[1,0].set_xlabel('x (m)')
-axes[1,0].set_ylabel('Mach Number')
-axes[1,0].grid()
+    axes[1,0].plot(data['x'], data['M'], 'k-')
+    axes[1,0].set_xlabel('x (m)')
+    axes[1,0].set_ylabel('Mach Number')
+    axes[1,0].grid()
 
-axes[1,1].plot(data['x'], data['p'], 'b-')
-axes[1,1].set_xlabel('x (m)')
-axes[1,1].set_ylabel('Pressure (Pa)')
-axes[1,1].grid()
+    axes[1,1].plot(data['x'], data['p'], 'b-')
+    axes[1,1].set_xlabel('x (m)')
+    axes[1,1].set_ylabel('Pressure (Pa)')
+    axes[1,1].grid()
 
-plt.tight_layout()
-plt.show()
+    plt.tight_layout()
+    plt.show()
