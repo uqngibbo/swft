@@ -1,13 +1,7 @@
 /*
-    swft: A one-dimensional scramjet modelling code.
+    swft: A one-dimensional flowpath modelling code.
 
     References:
-
-    Todo List:
-     - Python bindings
-     - Reactions
-     - Actually try the scramjet flow
-     - Nonsymbolic derivatives that are a bit less messed up.
 
     @author: Nick Gibbons
 */
@@ -156,7 +150,8 @@ Primitives increment_primitives(double x, double A, double dx, double dA, double
 
     // Rayleigh heat addition (I did this derivation at 2330)
     //double Qdot = Hdot*A*dx;
-    double Qdot = Hdot*A*dx - rho*v*CH*(u + r*v*v/2.0 - uw)*dx;
+    double qw = rho*v*CH*(u + r*v*v/2.0 - uw);
+    double Qdot = Hdot*A*dx - qw*2.0*sqrt(PI*A)*dx;
 
     // Compute the accommodation increments using expressions from Maxima.
     // We get slightly different dp_chems to nenzf1d. I wonder why?
@@ -211,6 +206,7 @@ int main(string[] args)
 
     SimData[][] fderivs;
     SimData[] Hderivs;
+    SimData[] CHderivs;
 
     double[] xs;
     SimData[] simdata;
@@ -228,6 +224,8 @@ int main(string[] args)
     fderivs.length = cfg.f.length;
     dPdfs.length = cfg.f.length;
 
+    Primitives dPdCH0 = Primitives(0.0, 0.0, 0.0, 0.0);
+    Primitives dPdCH;
     Primitives dPdH0 = Primitives(0.0, 0.0, 0.0, 0.0);
     Primitives dPdH;
 
@@ -237,7 +235,8 @@ int main(string[] args)
         foreach(i; 0 .. cfg.f.length){
             fderivs[i] ~= SimData(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
         }
-        Hderivs~= SimData(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+        Hderivs ~= SimData(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+        CHderivs~= SimData(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
         dPkdfj.length=1;
     }
 
@@ -273,6 +272,7 @@ int main(string[] args)
             }
             dPkdfj ~= dP1dfj;
             dPdH = H_derivative(P0, P1, dPdH0, f, Hdot, CH, uw, dA, A, A1, dx, gs, gm);
+            dPdCH=CH_derivative(P0, P1, dPdCH0,f, Hdot, CH, uw, dA, A, A1, dx, gs, gm);
         }
 
         // Add the increments
@@ -307,6 +307,12 @@ int main(string[] args)
             double dMdH = (gs.a.re*dPdH.v - P1.v*dadH)/gs.a.re/gs.a.re;
             Hderivs ~= SimData(dPdH.p, dTdH, dPdH.rho, 0.0, dPdH.v, dMdH, 0.0);
             dPdH0 = dPdH;
+
+            double dTdCH = dPdCH.u/cv;
+            double dadCH = 0.5*sqrt(gamma*R/gs.T.re)*dTdCH;
+            double dMdCH = (gs.a.re*dPdCH.v - P1.v*dadCH)/gs.a.re/gs.a.re;
+            CHderivs ~= SimData(dPdCH.p, dTdCH, dPdCH.rho, 0.0, dPdCH.v, dMdCH, 0.0);
+            dPdCH0 = dPdCH;
         }
 
         iter += 1;
@@ -334,6 +340,10 @@ int main(string[] args)
         derivs_file_name = format("Hderivs-%s.bin", config_file_name.chomp(".yaml"));
         writefln("Writing derivs to file %s...", derivs_file_name);
         write_solution_to_file(xs, Hderivs, derivs_file_name);
+
+        derivs_file_name = format("CHderivs-%s.bin", config_file_name.chomp(".yaml"));
+        writefln("Writing derivs to file %s...", derivs_file_name);
+        write_solution_to_file(xs, CHderivs, derivs_file_name);
     }
 
     return exitFlag;

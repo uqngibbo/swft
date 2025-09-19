@@ -9,7 +9,7 @@ eval_when(batch,ttyoff : true)$
 
 mass:rho*v*A - rho0*v0*A0;
 mom:rho*v*v*A + p*A - rho0*v0*v0*A0 - p0*A0 -(p+p0)/2*dA + c*f*rho0*v0*v0;
-nrg:rho*v*A*(u+v*v/2) + p*A*v - rho0*v0*A0*(u0+v0*v0/2) - p0*A0*v0 - H*A0*dx + rho0*v0*CH*(u0 + r*v0*v0/2 - uw);
+nrg:rho*v*A*(u+v*v/2) + p*A*v - rho0*v0*A0*(u0+v0*v0/2) - p0*A0*v0 - H*A0*dx + rho0*v0*CH*(u0 + r*v0*v0/2 - uw)*2*sqrt(PI*A0)*dx;
 eos:p-rho*R*u/cv;
 
 /* Okay this matches what you get when you do all the substitution */

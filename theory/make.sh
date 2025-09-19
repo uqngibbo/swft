@@ -8,3 +8,8 @@ maxima --batch heat_addition_derivative.max | grep -v '(%' | tail -n +9 > derivs
 sed -i 's/\^/\^\^/g' derivs_heat.d
 sed -i 's/ ;/;/g'  derivs_heat.d
 sed -i 's/[[:space:]]\+$//' derivs_heat.d
+
+maxima --batch convection_derivative.max | grep -v '(%' | tail -n +9 > derivs_convection.d
+sed -i 's/\^/\^\^/g' derivs_convection.d
+sed -i 's/ ;/;/g'  derivs_convection.d
+sed -i 's/[[:space:]]\+$//' derivs_convection.d
