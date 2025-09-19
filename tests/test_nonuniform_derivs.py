@@ -8,25 +8,9 @@ from numpy import array, zeros, interp, frombuffer, array, concatenate, log, lin
 import struct
 import matplotlib.pyplot as plt
 import subprocess
-from test_friction import read_solution_file
 import yaml
 from scipy.interpolate import interp1d
-
-TEMPLATE = """
-gas_file_name: "gm.lua"
-reaction_file_name: "rr.lua"
-xi: [0.0, 1.0]
-Ai: [0.007853981633974483, 0.007853981633974483]
-xf: {}
-f:  {}
-dt: 5e-7
-Hdot: 0.0
-T0: 361.0
-p0: 968.0
-v0: 3623.0
-Y0: {{"air": 1.0}}
-calc_derivatives: {}
-"""
+from libswft import *
 
 def read_cfg(filename):
     with open(filename) as fp:
@@ -62,18 +46,19 @@ def get_L2_norms(dUdf_fd, dUdf):
     return L2
 
 def test_runswft():
-    xf= [0.0, 1.0]
-    f = [0.001, 0.005]
-    f2= [0.001001, 0.005]
-    with open('baseline.yaml', 'w') as fp:
-        fp.write(TEMPLATE.format(xf, f, "true"))
+    baseline = read_config_file('../examples/friction.yaml')
+    baseline['calc_derivatives'] = "true"
+    baseline['f'][0] = 0.001
+    write_config_to_file(baseline, 'baseline.yaml')
 
     cmd = "swft baseline.yaml"
     proc = subprocess.run(cmd.split(), capture_output=True, text=True)
     assert proc.returncode == 0, "Failed cmd: "+cmd
 
-    with open('perturbed.yaml', 'w') as fp:
-        fp.write(TEMPLATE.format(xf, f2, "false"))
+    perturbed = {key:val for key,val in baseline.items()}
+    perturbed['calc_derivatives'] = "false"
+    perturbed['f'][0] += 1e-6
+    write_config_to_file(perturbed, 'perturbed.yaml')
 
     cmd = "swft perturbed.yaml"
     proc = subprocess.run(cmd.split(), capture_output=True, text=True)
