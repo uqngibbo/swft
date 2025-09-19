@@ -14,6 +14,7 @@ import std.format;
 import std.string;
 import std.conv;
 import std.typecons: Tuple;
+import std.path;
 
 // swft specific modules
 import io;
@@ -325,23 +326,24 @@ int main(string[] args)
     writefln("Done in %d iters", iter);
     print_state(" End", P0.v, M, As, gs, gm);
 
-    string output_file_name = format("%s.bin", config_file_name.chomp(".yaml"));
+    string base_file_name = baseName(config_file_name).chomp(".yaml");
+    string output_file_name = format("%s.bin", base_file_name);
     writefln("Writing solution to file %s...", output_file_name);
     write_solution_to_file(xs, simdata, output_file_name);
 
     if (cfg.calc_derivatives) {
         string derivs_file_name;
         foreach(i; 0 .. cfg.f.length){
-            derivs_file_name = format("fderivs_%04d-%s.bin", i, config_file_name.chomp(".yaml"));
+            derivs_file_name = format("fderivs_%04d-%s.bin", i, base_file_name);
             writefln("Writing derivs to file %s...", derivs_file_name);
             write_solution_to_file(xs, fderivs[i], derivs_file_name);
         }
 
-        derivs_file_name = format("Hderivs-%s.bin", config_file_name.chomp(".yaml"));
+        derivs_file_name = format("Hderivs-%s.bin", base_file_name);
         writefln("Writing derivs to file %s...", derivs_file_name);
         write_solution_to_file(xs, Hderivs, derivs_file_name);
 
-        derivs_file_name = format("CHderivs-%s.bin", config_file_name.chomp(".yaml"));
+        derivs_file_name = format("CHderivs-%s.bin", base_file_name);
         writefln("Writing derivs to file %s...", derivs_file_name);
         write_solution_to_file(xs, CHderivs, derivs_file_name);
     }
