@@ -5,13 +5,11 @@ Test code for swft, checking heat transfer derivs.
 """
 
 from numpy import array, zeros, interp, frombuffer, array, concatenate, log, linspace, isclose, sqrt
-import struct
-from io import BytesIO, BufferedWriter
 import matplotlib.pyplot as plt
 from scipy.optimize import brentq
 import subprocess
-from test_friction import read_solution_file
 import yaml
+from libswft import *
 
 def read_cfg(filename):
     with open(filename) as fp:
@@ -21,11 +19,11 @@ def read_cfg(filename):
     return cfg
 
 def read_derivs():
-    name0 = 'heat_addition'
+    name0 = 'baseline'
     cfg0  = read_cfg("{}.yaml".format(name0))
     data0= read_solution_file("{}.bin".format(name0))
 
-    name1 = 'perturb_heat_addition'
+    name1 = 'perturbed'
     cfg1  = read_cfg("{}.yaml".format(name1))
     data1= read_solution_file("{}.bin".format(name1))
 
@@ -44,13 +42,30 @@ def get_L2_norms(dUdH_fd, dUdH):
     return L2
 
 def test_runswft():
-    cmd = "swft heat_addition.yaml"
+    baseline = read_config_file('../examples/heat_addition.yaml')
+    baseline['calc_derivatives'] = "true"
+    write_config_to_file(baseline, 'baseline.yaml')
+
+    cmd = "swft baseline.yaml"
     proc = subprocess.run(cmd.split(), capture_output=True, text=True)
     assert proc.returncode == 0, "Failed cmd: "+cmd
 
-    cmd = "swft perturb_heat_addition.yaml"
+    perturbed = {key:val for key,val in baseline.items()}
+    perturbed['calc_derivatives'] = "false"
+    perturbed['Hdot'] *= 1.001
+    write_config_to_file(perturbed, 'perturbed.yaml')
+
+    cmd = "swft perturbed.yaml"
     proc = subprocess.run(cmd.split(), capture_output=True, text=True)
     assert proc.returncode == 0, "Failed cmd: "+cmd
+
+    #cmd = "swft heat_addition.yaml"
+    #proc = subprocess.run(cmd.split(), capture_output=True, text=True)
+    #assert proc.returncode == 0, "Failed cmd: "+cmd
+
+    #cmd = "swft perturb_heat_addition.yaml"
+    #proc = subprocess.run(cmd.split(), capture_output=True, text=True)
+    #assert proc.returncode == 0, "Failed cmd: "+cmd
 
 def test_output():
     data0, dUdH_fd, dUdH = read_derivs()
@@ -61,11 +76,15 @@ def test_output():
     assert isclose(L2['v'], 6.290e-11, 1e-4)
 
 def test_cleanup():
-    cmd = "rm heat_addition.bin perturb_heat_addition.bin"
+    cmd = "rm baseline.bin perturbed.bin"
     proc = subprocess.run(cmd.split(), capture_output=True, text=True)
     assert proc.returncode == 0, "Failed cmd: "+cmd
 
-    cmd = "rm fderivs_0001-heat_addition.bin fderivs_0000-heat_addition.bin Hderivs-heat_addition.bin"
+    cmd = "rm Hderivs-baseline.bin fderivs_0000-baseline.bin fderivs_0001-baseline.bin CHderivs-baseline.bin"
+    proc = subprocess.run(cmd.split(), capture_output=True, text=True)
+    assert proc.returncode == 0, "Failed cmd: "+cmd
+
+    cmd = "rm baseline.yaml perturbed.yaml"
     proc = subprocess.run(cmd.split(), capture_output=True, text=True)
     assert proc.returncode == 0, "Failed cmd: "+cmd
 

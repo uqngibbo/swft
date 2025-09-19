@@ -95,7 +95,7 @@ def test_cleanup():
     proc = subprocess.run(cmd.split(), capture_output=True, text=True)
     assert proc.returncode == 0, "Failed cmd: "+cmd
 
-    cmd = "rm Hderivs-baseline.bin fderivs_0000-baseline.bin fderivs_0001-baseline.bin"
+    cmd = "rm Hderivs-baseline.bin fderivs_0000-baseline.bin fderivs_0001-baseline.bin CHderivs-baseline.bin"
     proc = subprocess.run(cmd.split(), capture_output=True, text=True)
     assert proc.returncode == 0, "Failed cmd: "+cmd
 
